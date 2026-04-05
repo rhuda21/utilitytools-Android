@@ -1,0 +1,16 @@
+[
+    {
+        "id": "webhook_tool",
+        "name": "Webhook",
+        "icon": "🌐",
+        "path": "tools/webhook/index.html",
+        "version": "1.0.0"
+    },
+    {
+        "id": "sys_info",
+        "name": "System Info Testing",
+        "icon": "📊",
+        "path": "tools/sys_info/index.html",
+        "version": "1.2.1"
+    }
+]
