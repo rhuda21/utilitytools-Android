@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg: #0f0f14;
+            --card: #16161e;
+            --accent: #89b4fa;
+            --text: #cdd6f4;
+            --danger: #f38ba8;
+            --success: #a6e3a1;
+            --border: #313244;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .ascii-art {
+            white-space: pre;
+            font-size: 8px;
+            background: linear-gradient(90deg, #89dceb, #89b4fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .tag { color: #7f849c; font-size: 14px; margin-bottom: 20px; }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+            position: relative;
+        }
+
+        label { display: block; margin-bottom: 10px; font-size: 14px; }
+
+        input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 12px;
+            color: var(--text);
+            border-radius: 4px;
+            outline: none;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        input:focus { border-color: var(--accent); }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+
+        .btn-delete { background: var(--danger); color: #11111b; }
+        .btn-delete:active { transform: scale(0.98); opacity: 0.8; }
+
+        #console {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 500px;
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 13px;
+            min-height: 120px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .log-info { color: var(--accent); }
+        .log-success { color: var(--success); }
+        .log-error { color: var(--danger); }
+
+        .back-btn {
+            margin-top: 20px;
+            color: #7f849c;
+            text-decoration: none;
+            font-size: 12px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ascii-art">
+   __  ____  _ ___ __       ______            __    _    _____      
+  / / / / /_(_) (_) /___  _/_  __/___  ____  / /___| |  / /__ \     
+ / / / / __/ / / / __/ / / // / / __ \/ __ \/ / ___/ | / /__/ /     
+/ /_/ / /_/ / / / /_/ /_/ // / / /_/ / /_/ / (__  )| |/ // __/      
+\____/\__/_/_/_/\__/ \__, //_/  \____/____/_/____/ |___//____/      
+                    /____/                                           
+    </div>
+    <div class="tag">[WebhookDeleter@UtilityToolsV2]</div>
+
+    <div class="container">
+        <label>[>] Enter Webhook URL to Delete:</label>
+        <input type="text" id="webhook-url" placeholder="https://discord.com/api/webhooks/...">
+        
+        <div class="divider"></div>
+        
+        <button class="btn btn-delete" onclick="startDeletion()">DELETE WEBHOOK</button>
+    </div>
+
+    <div id="console">
+        <div class="log-info">>> System initialized. Waiting for input...</div>
+    </div>
+
+    <div class="back-btn" onclick="window.location.href='/'">Press Enter to Return to Menu</div>
+
+    <script>
+        function log(msg, type='info') {
+            const consoleBox = document.getElementById('console');
+            const div = document.createElement('div');
+            div.className = `log-${type}`;
+            div.innerText = `>> ${msg}`;
+            consoleBox.appendChild(div);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+        function startDeletion() {
+            const url = document.getElementById('webhook-url').value.trim();
+            if (!url.startsWith("https://discord.com/api/webhooks/")) {
+                log("Invalid Discord Webhook format!", "error");
+                return;
+            }
+            if (confirm("[?] Are you sure you want to delete this?")) {
+                log(`Attempting to delete: ${url.substring(0, 45)}...`);
+                if (window.pywebview && window.pywebview.api) {
+                    window.pywebview.api.delete_webhook(url).then(response => {
+                        if (response.success) {
+                            log(response.message, "success");
+                        } else {
+                            log(response.message, "error");
+                        }
+                    });
+                }
+            } else {
+                log("Deletion cancelled.", "info");
+            }
+        }
+    </script>
+</body>
+</html>
