@@ -1,18 +1,18 @@
 [
     {
-        "id": "webhook_tool",
-        "name": "Webhook",
-        "icon": "🌐",
+        "id": "webhook_spammer",
+        "name": "Webhook Spammer",
+        "icon": "🚀",
         "version": "1.0.0",
-        "path": "utilitytools-Android-main/Tools/Webhook/index.html",
+        "path": "utilitytools-Android-main/Tools/WebhookSpammer/index.html",
         "download_url": "https://github.com/rhuda21/utilitytools-Android/archive/refs/heads/main.zip"
     },
     {
-        "id": "sys_info",
-        "name": "System Info",
-        "icon": "📊",
+        "id": "webhook_deleter",
+        "name": "Webhook Deleter",
+        "icon": "🗑️",
         "version": "1.0.0",
-        "path": "utilitytools-Android-main/Tools/SysInfo/index.html",
+        "path": "utilitytools-Android-main/Tools/WebhookDeleter/index.html",
         "download_url": "https://github.com/rhuda21/utilitytools-Android/archive/refs/heads/main.zip"
     }
 ]
