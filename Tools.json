@@ -3,14 +3,16 @@
         "id": "webhook_tool",
         "name": "Webhook",
         "icon": "🌐",
-        "path": "tools/webhook/index.html",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "path": "utilitytools-Android-main/Tools/Webhook/index.html",
+        "download_url": "https://github.com/rhuda21/utilitytools-Android/archive/refs/heads/main.zip"
     },
     {
         "id": "sys_info",
-        "name": "System Info Testing",
+        "name": "System Info",
         "icon": "📊",
-        "path": "tools/sys_info/index.html",
-        "version": "1.2.1"
+        "version": "1.0.0",
+        "path": "utilitytools-Android-main/Tools/SysInfo/index.html",
+        "download_url": "https://github.com/rhuda21/utilitytools-Android/archive/refs/heads/main.zip"
     }
 ]
