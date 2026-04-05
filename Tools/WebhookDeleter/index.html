@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhook Deleter</title>
     <style>
         :root {
             --bg: #0f0f14;
@@ -34,6 +35,7 @@
             -webkit-text-fill-color: transparent;
             text-align: center;
             margin-bottom: 5px;
+            line-height: 1.2;
         }
 
         .tag { color: #7f849c; font-size: 14px; margin-bottom: 20px; }
@@ -46,13 +48,13 @@
             border-radius: 8px;
             padding: 25px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-sizing: border-box;
         }
 
         .divider {
             height: 1px;
             background: var(--border);
             margin: 20px 0;
-            position: relative;
         }
 
         label { display: block; margin-bottom: 10px; font-size: 14px; }
@@ -95,7 +97,7 @@
             border-radius: 4px;
             padding: 15px;
             font-size: 13px;
-            min-height: 120px;
+            min-height: 140px;
             box-sizing: border-box;
             overflow-y: auto;
         }
@@ -110,7 +112,9 @@
             text-decoration: none;
             font-size: 12px;
             cursor: pointer;
+            border-bottom: 1px solid transparent;
         }
+        .back-btn:hover { border-bottom: 1px solid #7f849c; }
     </style>
 </head>
 <body>
@@ -138,7 +142,7 @@
         <div class="log-info">>> System initialized. Waiting for input...</div>
     </div>
 
-    <div class="back-btn" onclick="window.location.href='/'">Press Enter to Return to Menu</div>
+    <div class="back-btn" onclick="window.location.href='/'">Return to Menu</div>
 
     <script>
         function log(msg, type='info') {
@@ -149,22 +153,33 @@
             consoleBox.appendChild(div);
             consoleBox.scrollTop = consoleBox.scrollHeight;
         }
+
         function startDeletion() {
-            const url = document.getElementById('webhook-url').value.trim();
-            if (!url.startsWith("https://discord.com/api/webhooks/")) {
+            const urlInput = document.getElementById('webhook-url').value.trim();
+            
+            if (!urlInput.startsWith("https://discord.com/api/webhooks/")) {
                 log("Invalid Discord Webhook format!", "error");
                 return;
             }
+
             if (confirm("[?] Are you sure you want to delete this?")) {
-                log(`Attempting to delete: ${url.substring(0, 45)}...`);
+                log("Processing request through Python engine...");
+
                 if (window.pywebview && window.pywebview.api) {
-                    window.pywebview.api.delete_webhook(url).then(response => {
-                        if (response.success) {
-                            log(response.message, "success");
-                        } else {
-                            log(response.message, "error");
-                        }
-                    });
+                    window.pywebview.api.run_tool('webhook_deleter', 'delete', urlInput)
+                        .then(response => {
+                            if (response.success) {
+                                log(response.message, "success");
+                                document.getElementById('webhook-url').value = '';
+                            } else {
+                                log(response.message, "error");
+                            }
+                        })
+                        .catch(err => {
+                            log("Engine Error: " + err, "error");
+                        });
+                } else {
+                    log("Error: API not detected.", "error");
                 }
             } else {
                 log("Deletion cancelled.", "info");
