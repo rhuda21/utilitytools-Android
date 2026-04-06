@@ -10,10 +10,10 @@
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> •
-  <a href="#quick-start">Quick Start</a> •
-  <a href="#tools">Tools</a> •
-  <a href="#development">Development</a>
+  <a href="#-features">Features</a> •
+  <a href="#️-quick-start">Quick Start</a> •
+  <a href="#-tools">Tools</a> •
+  <a href="#️-development">Development</a>
 </p>
 
 ---
