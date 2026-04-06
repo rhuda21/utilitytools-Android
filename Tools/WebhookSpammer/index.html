@@ -12,7 +12,6 @@
             --text: #cdd6f4;
             --danger: #f38ba8;
             --success: #a6e3a1;
-            --warning: #f9e2af;
             --border: #313244;
         }
 
@@ -58,14 +57,14 @@
             margin: 20px 0;
         }
 
-        label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--accent); }
+        label { display: block; margin-bottom: 10px; font-size: 14px; }
         label::before { content: "[>] "; }
 
         input, select {
             width: 100%;
             background: var(--bg);
             border: 1px solid var(--border);
-            padding: 10px 12px;
+            padding: 12px;
             color: var(--text);
             border-radius: 4px;
             outline: none;
@@ -79,7 +78,6 @@
         .row {
             display: flex;
             gap: 15px;
-            margin-bottom: 15px;
         }
         .row .input-group { flex: 1; }
 
@@ -89,7 +87,7 @@
             background: rgba(0,0,0,0.3);
             border: 1px solid var(--border);
             border-radius: 6px;
-            padding: 12px;
+            padding: 15px;
             margin: 15px 0;
         }
 
@@ -108,30 +106,38 @@
         }
         .checkbox-label span { color: var(--text); margin: 0; }
 
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
         .btn {
-            width: 100%;
-            padding: 14px;
-            margin-top: 10px;
+            flex: 1;
+            padding: 15px;
             border: none;
             border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
             font-family: inherit;
             transition: 0.2s;
-            font-size: 14px;
         }
 
         .btn-spam { 
             background: linear-gradient(90deg, #f38ba8, #f9e2af);
             color: #11111b; 
         }
-        .btn-spam:active { transform: scale(0.98); opacity: 0.9; }
+        .btn-spam:active { transform: scale(0.98); opacity: 0.8; }
+        
         .btn-stop { 
             background: #313244;
             color: var(--text);
-            margin-top: 8px;
         }
-        .btn-stop:active { transform: scale(0.98); }
+        .btn-stop:active { transform: scale(0.98); opacity: 0.8; }
+        .btn-stop:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
 
         #console {
             margin-top: 20px;
@@ -141,18 +147,15 @@
             border: 1px solid var(--border);
             border-radius: 4px;
             padding: 15px;
-            font-size: 12px;
+            font-size: 13px;
             min-height: 180px;
-            max-height: 250px;
             box-sizing: border-box;
             overflow-y: auto;
-            font-family: 'Courier New', monospace;
         }
 
         .log-info { color: var(--accent); }
         .log-success { color: var(--success); }
         .log-error { color: var(--danger); }
-        .log-warning { color: var(--warning); }
 
         .back-btn {
             margin-top: 20px;
@@ -163,16 +166,6 @@
             border-bottom: 1px solid transparent;
         }
         .back-btn:hover { border-bottom: 1px solid #7f849c; }
-
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            font-size: 11px;
-            color: #7f849c;
-            max-width: 550px;
-            width: 100%;
-        }
     </style>
 </head>
 <body>
@@ -195,7 +188,7 @@
 
         <div class="input-group">
             <label>Message Content</label>
-            <input type="text" id="message" placeholder="@everyone utilitytools is now on android" value="@everyone **https://discord.gg/4CngttkJzN**">
+            <input type="text" id="message" placeholder="@everyone SPAM ATTACK" value="@everyone **WEBHOOK FLOOD**">
         </div>
 
         <div class="row">
@@ -231,18 +224,14 @@
 
         <div class="divider"></div>
 
-        <button class="btn btn-spam" onclick="startSpam()">START SPAMMING</button>
-        <button class="btn btn-stop" onclick="stopSpam()">STOP SPAMMING</button>
+        <div class="btn-group">
+            <button class="btn btn-spam" id="spamBtn" onclick="startSpam()">START SPAMMING</button>
+            <button class="btn btn-stop" id="stopBtn" onclick="stopSpam()" disabled>STOP SPAMMING</button>
+        </div>
     </div>
 
     <div id="console">
-        <div class="log-info">>> System initialized. Ready to spam.</div>
-    </div>
-
-    <div class="stats">
-        <span>Sent: <span id="sent-count">0</span></span>
-        <span>Failed: <span id="failed-count">0</span></span>
-        <span>Target: <span id="target-display">0</span></span>
+        <div class="log-info">>> System initialized. Waiting for input...</div>
     </div>
 
     <div class="back-btn" onclick="window.location.href='/'">Return to Menu</div>
@@ -257,92 +246,96 @@
             div.innerText = `>> ${msg}`;
             consoleBox.appendChild(div);
             consoleBox.scrollTop = consoleBox.scrollHeight;
-            while (consoleBox.children.length > 150) {
-                consoleBox.removeChild(consoleBox.firstChild);
-            }
-        }
-
-        function updateStats(sent, failed, target) {
-            document.getElementById('sent-count').innerText = sent;
-            document.getElementById('failed-count').innerText = failed;
-            document.getElementById('target-display').innerText = target === 0 ? '∞' : target;
         }
 
         const proxyToggle = document.getElementById('proxy-toggle');
         const proxyMethodDiv = document.getElementById('proxy-method-div');
+        const spamBtn = document.getElementById('spamBtn');
+        const stopBtn = document.getElementById('stopBtn');
         
         proxyToggle.addEventListener('change', (e) => {
             proxyMethodDiv.style.display = e.target.checked ? 'block' : 'none';
         });
 
-        function validateInputs() {
+        function startSpam() {
+            if (spamActive) {
+                log("Spam already running!", "warning");
+                return;
+            }
+
             const url = document.getElementById('webhook-url').value.trim();
             if (!url.startsWith("https://discord.com/api/webhooks/")) {
                 log("Invalid Discord Webhook format!", "error");
-                return null;
+                return;
             }
+
             const threads = parseInt(document.getElementById('threads').value);
             if (isNaN(threads) || threads < 1 || threads > 6) {
                 log("Threads must be between 1 and 6", "error");
-                return null;
+                return;
             }
+
             const delay = parseFloat(document.getElementById('delay').value);
             if (isNaN(delay) || delay < 0) {
                 log("Delay must be a positive number", "error");
-                return null;
+                return;
             }
+
             const total = parseInt(document.getElementById('total-msgs').value);
             if (isNaN(total) || total < 0) {
                 log("Total messages must be 0 or positive", "error");
-                return null;
+                return;
             }
+
             const message = document.getElementById('message').value.trim();
             if (!message) {
                 log("Message content cannot be empty", "error");
-                return null;
-            }
-            return { url, threads, delay, total, message, useProxy: proxyToggle.checked, proxyMethod: document.getElementById('proxy-method').value };
-        }
-
-        function startSpam() {
-            if (spamActive) {
-                log("Spam already running! Stop it first.", "warning");
                 return;
             }
 
-            const config = validateInputs();
-            if (!config) return;
-
-            if (!confirm(`Start spam attack?\nTarget: ${config.url.substring(0, 50)}...\nThreads: ${config.threads}\nDelay: ${config.delay}s\nTotal: ${config.total === 0 ? 'UNLIMITED' : config.total}\nProxy: ${config.useProxy ? 'ON (' + config.proxyMethod + ')' : 'OFF'}`)) {
-                log("Spam cancelled.", "info");
-                return;
-            }
-
-            log("Processing request...");
-            
-            if (window.pywebview && window.pywebview.api) {
-                const params = {
-                    webhook_url: config.url,
-                    content: config.message,
-                    thread_count: config.threads,
-                    total_messages: config.total,
-                    delay: config.delay,
-                    proxies: config.useProxy,
-                    proxy_method: config.proxyMethod
-                };
+            if (confirm(`[?] Start spam attack?\nTarget: ${url.substring(0, 50)}...\nThreads: ${threads}\nDelay: ${delay}s\nTotal: ${total === 0 ? 'UNLIMITED' : total}\nProxy: ${proxyToggle.checked ? 'ON (' + document.getElementById('proxy-method').value + ')' : 'OFF'}`)) {
+                log("Processing request...");
                 
-                window.pywebview.api.run_tool('webhook_spammer', 'spam_webhook_v2', params)
-                    .then(response => {
-                        spamActive = true;
-                        log("Spam attack started successfully!", "success");
-                        log(`Spamming on ${config.url.substring(0, 50)}...`, "info");
-                        log(`Threads: ${config.threads} | Delay: ${config.delay}s | Target: ${config.total === 0 ? '∞' : config.total}`, "info");
-                    })
-                    .catch(err => {
-                        log("Engine Error: " + err, "error");
-                    });
+                if (window.pywebview && window.pywebview.api) {
+                    const params = {
+                        webhook_url: url,
+                        content: message,
+                        thread_count: threads,
+                        total_messages: total,
+                        delay: delay,
+                        proxies: proxyToggle.checked,
+                        proxy_method: document.getElementById('proxy-method').value
+                    };
+                    
+                    window.pywebview.api.run_tool('webhook_spammer', 'spam_webhook_v2', params)
+                        .then(response => {
+                            spamActive = false;
+                            spamBtn.disabled = false;
+                            stopBtn.disabled = true;
+                            if (response.success) {
+                                log(response.message, "success");
+                            } else {
+                                log(response.message, "error");
+                            }
+                        })
+                        .catch(err => {
+                            spamActive = false;
+                            spamBtn.disabled = false;
+                            stopBtn.disabled = true;
+                            log("Engine Error: " + err, "error");
+                        });
+                    
+                    spamActive = true;
+                    spamBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    log("Spam attack started! Click STOP to halt.", "success");
+                    log(`Target: ${url.substring(0, 50)}...`, "info");
+                    log(`Threads: ${threads} | Delay: ${delay}s | Target: ${total === 0 ? '∞' : total}`, "info");
+                } else {
+                    log("Error: API not detected.", "error");
+                }
             } else {
-                log("Error: API not detected.", "error");
+                log("Spam cancelled.", "info");
             }
         }
 
@@ -353,16 +346,22 @@
             }
             
             if (window.pywebview && window.pywebview.api) {
-                window.pywebview.api.run_tool('webhook_spammer', 'stop', {})
+                log("Stopping spam...", "warning");
+                window.pywebview.api.run_tool('webhook_spammer', 'stop_spam', {})
                     .then(response => {
-                        if (response) {
-                            spamActive = false;
+                        spamActive = false;
+                        spamBtn.disabled = false;
+                        stopBtn.disabled = true;
+                        if (response.success) {
                             log(response.message, "success");
                         } else {
-                            log(response.message, "error");
+                            log(response.message || "Spam stopped by user.", "warning");
                         }
                     })
                     .catch(err => {
+                        spamActive = false;
+                        spamBtn.disabled = false;
+                        stopBtn.disabled = true;
                         log("Stop Error: " + err, "error");
                     });
             } else {

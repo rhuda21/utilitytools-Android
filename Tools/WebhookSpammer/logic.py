@@ -4,6 +4,7 @@ import random
 import threading
 import time
 import re
+stop_spam_flag = False
 def proxy_loader():
     try:
         with open("data/proxies.txt", "r") as f:
@@ -74,15 +75,13 @@ def send_webhook(webhook_url, content, delay=0.5,using_proxy=False, proxy_method
             headers=headers,
             timeout=10
         )
-        
+        time.sleep(delay)
         if response.status_code == 204:
             return(f"[Webhook@UtilityToolsV2] Message sent successfully!")
         else:
             return(f"[Webhook@UtilityToolsV2] Failed to send message. Status Code: {response.status_code}")
     except requests.exceptions.RequestException as e:
         return(f"[Webhook@UtilityToolsV2] Error: {e}")
-
-    time.sleep(delay)
 
 def spam_webhook(webhook_url, content, thread_count, message_count=None, delay=0.5):
     def worker():
@@ -100,7 +99,6 @@ def spam_webhook(webhook_url, content, thread_count, message_count=None, delay=0
         thread = threading.Thread(target=worker, daemon=True)
         thread.start()
         threads.append(thread)
-        return(f"[Webhook@UtilityToolsV2] Started thread {i+1}/{thread_count}")
     if message_count:
         for thread in threads:
             thread.join()
@@ -110,21 +108,25 @@ def spam_webhook(webhook_url, content, thread_count, message_count=None, delay=0
                 time.sleep(1)
         except KeyboardInterrupt:
             return(f"[Webhook@UtilityToolsV2] Stopping all threads...")
+def stop_spam():
+    global stop_spam_flag
+    stop_spam_flag = True
+    return {"success": True, "message": "Spam stopped by user."}
 
 def spam_webhook_v2(webhook_url, content, thread_count, total_messages=None, delay=0.5, proxies=False, proxy_method=None):
+    global stop_spam_flag
+    stop_spam_flag = False
     message_counter = 0
-    stop_flag = threading.Event()
     
     def worker():
         nonlocal message_counter
-        while not stop_flag.is_set():
+        while not stop_spam_flag:
             if total_messages and message_counter >= total_messages:
                 break
                 
             with threading.Lock():
                 if total_messages and message_counter >= total_messages:
                     break
-                current_msg = message_counter + 1
                 message_counter += 1
                         
             send_webhook(webhook_url, content, delay, using_proxy=proxies, proxy_method=proxy_method)
@@ -137,11 +139,16 @@ def spam_webhook_v2(webhook_url, content, thread_count, total_messages=None, del
     
     try:
         if total_messages:
-            while message_counter < total_messages:
+            while message_counter < total_messages and not stop_spam_flag:
                 time.sleep(0.1)
-            stop_flag.set()
+            stop_spam_flag = True
+        else:
+            while not stop_spam_flag:
+                time.sleep(0.1)
+        
         for thread in threads:
             thread.join(timeout=1)
     except Exception as e:
-        return
-    return (f"[Webhook@UtilityToolsV2] Completed! Total messages sent: {message_counter}")
+        return {"success": False, "message": str(e)}
+    
+    return {"success": True, "message": f"[Webhook@UtilityToolsV2] Completed! Total messages sent: {message_counter}"}
