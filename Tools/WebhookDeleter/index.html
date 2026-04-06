@@ -156,15 +156,12 @@
 
         function startDeletion() {
             const urlInput = document.getElementById('webhook-url').value.trim();
-            
             if (!urlInput.startsWith("https://discord.com/api/webhooks/")) {
                 log("Invalid Discord Webhook format!", "error");
                 return;
             }
-
             if (confirm("[?] Are you sure you want to delete this?")) {
-                log("Processing request through Python engine...");
-
+                log("Processing request...");
                 if (window.pywebview && window.pywebview.api) {
                     window.pywebview.api.run_tool('webhook_deleter', 'delete', urlInput)
                         .then(response => {
