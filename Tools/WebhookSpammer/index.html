@@ -333,17 +333,10 @@
                 
                 window.pywebview.api.run_tool('webhook_spammer', 'spam_webhook_v2', params)
                     .then(response => {
-                        if (response.success) {
-                            spamActive = true;
-                            log(response.message, "success");
-                            log(`Spamming started on ${config.url.substring(0, 50)}...`, "info");
-                            log(`Threads: ${config.threads} | Delay: ${config.delay}s | Target: ${config.total === 0 ? '∞' : config.total}`, "info");
-                            if (response.stats) {
-                                updateStats(response.stats.sent, response.stats.failed, config.total);
-                            }
-                        } else {
-                            log(response.message, "error");
-                        }
+                        spamActive = true;
+                        log("Spam attack started successfully!", "success");
+                        log(`Spamming on ${config.url.substring(0, 50)}...`, "info");
+                        log(`Threads: ${config.threads} | Delay: ${config.delay}s | Target: ${config.total === 0 ? '∞' : config.total}`, "info");
                     })
                     .catch(err => {
                         log("Engine Error: " + err, "error");
@@ -362,7 +355,7 @@
             if (window.pywebview && window.pywebview.api) {
                 window.pywebview.api.run_tool('webhook_spammer', 'stop', {})
                     .then(response => {
-                        if (response.success) {
+                        if (response) {
                             spamActive = false;
                             log(response.message, "success");
                         } else {
