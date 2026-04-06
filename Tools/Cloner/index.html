@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Cloner | UtilityToolsV2</title>
+    <style>
+        :root {
+            --bg: #0f0f14;
+            --card: #16161e;
+            --accent: #89b4fa;
+            --accent2: #a6e3a1;
+            --text: #cdd6f4;
+            --danger: #f38ba8;
+            --success: #a6e3a1;
+            --warning: #f9e2af;
+            --border: #313244;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .ascii-art {
+            white-space: pre;
+            font-size: 7px;
+            background: linear-gradient(90deg, #89dceb, #89b4fa, #a6e3a1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+
+        .tag { color: #7f849c; font-size: 14px; margin-bottom: 20px; text-align: center; }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+        }
+
+        .section-title {
+            color: var(--accent);
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .section-title::before { content: "[>] "; }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--accent);
+        }
+        label::before { content: "[>] "; }
+
+        input, select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            color: var(--text);
+            border-radius: 4px;
+            outline: none;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 13px;
+        }
+
+        input:focus, select:focus { border-color: var(--accent); }
+
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+        .row .input-group { flex: 1; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .option-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .option-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .option-card.selected {
+            border-color: var(--success);
+            background: rgba(166, 227, 161, 0.1);
+        }
+
+        .option-num {
+            color: var(--accent2);
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .option-name {
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-clone {
+            background: linear-gradient(90deg, #89b4fa, #a6e3a1);
+            color: #11111b;
+        }
+        .btn-clone:active { transform: scale(0.98); opacity: 0.9; }
+
+        .btn-backup {
+            background: #313244;
+            color: var(--text);
+        }
+        .btn-backup:active { transform: scale(0.98); }
+
+        .btn-restore {
+            background: #f9e2af;
+            color: #11111b;
+        }
+        .btn-restore:active { transform: scale(0.98); }
+
+        #console {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 700px;
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 12px;
+            min-height: 200px;
+            max-height: 300px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        .log-info { color: var(--accent); }
+        .log-success { color: var(--success); }
+        .log-error { color: var(--danger); }
+        .log-warning { color: var(--warning); }
+
+        .back-btn {
+            margin-top: 20px;
+            color: #7f849c;
+            text-decoration: none;
+            font-size: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid transparent;
+        }
+        .back-btn:hover { border-bottom: 1px solid #7f849c; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+
+        .status-ready { background: #313244; color: var(--text); }
+        .status-running { background: var(--warning); color: #11111b; }
+        .status-done { background: var(--success); color: #11111b; }
+    </style>
+</head>
+<body>
+
+    <div class="ascii-art">
+  __  ____  _ ___ __       _______                       ____
+ / / / / /_(_) (_) /___ __/ ___/ /__  ___  ___ _____  __|_  /
+/ /_/ / __/ / / / __/ // / /__/ / _ \/ _ \/ -_) __/ |/ //_ < 
+\____/\__/_/_/_/\__/\_, /\___/_/\___/_//_/\__/_/  |___/____/ 
+                   /___/                                     
+    </div>
+    <div class="tag">[ServerCloner@UtilityToolsV2]</div>
+
+    <div class="container">
+        <div class="row">
+            <div class="input-group">
+                <label>Source Guild ID</label>
+                <input type="text" id="source-id" placeholder="123456789012345678">
+            </div>
+            <div class="input-group">
+                <label>Target Guild ID</label>
+                <input type="text" id="target-id" placeholder="987654321098765432">
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-title">Clone Options</div>
+        <div class="options-grid" id="options-grid">
+            <div class="option-card" data-opt="1">
+                <div class="option-num">01</div>
+                <div class="option-name">Server Name & Icon</div>
+            </div>
+            <div class="option-card" data-opt="2">
+                <div class="option-num">02</div>
+                <div class="option-name">Clone Roles</div>
+            </div>
+            <div class="option-card" data-opt="3">
+                <div class="option-num">03</div>
+                <div class="option-name">Clone Emojis</div>
+            </div>
+            <div class="option-card" data-opt="4">
+                <div class="option-num">04</div>
+                <div class="option-name">Clone Categories</div>
+            </div>
+            <div class="option-card" data-opt="5">
+                <div class="option-num">05</div>
+                <div class="option-name">Clone Channels</div>
+            </div>
+            <div class="option-card" data-opt="6">
+                <div class="option-num">06</div>
+                <div class="option-name">Create Backup</div>
+            </div>
+            <div class="option-card" data-opt="7">
+                <div class="option-num">07</div>
+                <div class="option-name">NSFW Flags</div>
+            </div>
+            <div class="option-card" data-opt="8">
+                <div class="option-num">08</div>
+                <div class="option-name">Clone Stickers</div>
+            </div>
+            <div class="option-card" data-opt="9">
+                <div class="option-num">09</div>
+                <div class="option-name">Clone Webhooks</div>
+            </div>
+            <div class="option-card" data-opt="*">
+                <div class="option-num">★</div>
+                <div class="option-name">FULL CLONE</div>
+            </div>
+            <div class="option-card" data-opt="$">
+                <div class="option-num">$</div>
+                <div class="option-name">Restore Backup</div>
+            </div>
+            <div class="option-card" data-opt="10">
+                <div class="option-num">10</div>
+                <div class="option-name">Credits</div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+            <div class="input-group">
+                <label>Backup File (for restore)</label>
+                <input type="text" id="backup-file" placeholder="backups/guild_id.json">
+            </div>
+        </div>
+
+        <button class="btn btn-clone" onclick="runClone()">▶ EXECUTE SELECTED</button>
+        <button class="btn btn-backup" onclick="quickBackup()">💾 QUICK BACKUP</button>
+    </div>
+
+    <div id="console">
+        <div class="log-info">>> System initialized. Ready to clone.</div>
+        <div class="log-info">>> Select options and click Execute.</div>
+    </div>
+
+    <div class="back-btn" onclick="window.location.href='/'">Return to Menu</div>
+
+    <script>
+        let selectedOptions = new Set();
+
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const opt = card.dataset.opt;
+                if (selectedOptions.has(opt)) {
+                    selectedOptions.delete(opt);
+                    card.classList.remove('selected');
+                } else {
+                    if (opt === '*' || opt === '$') {
+                        selectedOptions.clear();
+                        document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+                    }
+                    selectedOptions.add(opt);
+                    card.classList.add('selected');
+                }
+            });
+        });
+
+        function log(msg, type = 'info') {
+            const consoleBox = document.getElementById('console');
+            const div = document.createElement('div');
+            div.className = `log-${type}`;
+            div.innerText = `>> ${msg}`;
+            consoleBox.appendChild(div);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+            while (consoleBox.children.length > 200) {
+                consoleBox.removeChild(consoleBox.firstChild);
+            }
+        }
+
+        function getIds() {
+            const source = document.getElementById('source-id').value.trim();
+            const target = document.getElementById('target-id').value.trim();
+            return { source, target };
+        }
+
+        function runClone() {
+            const { source, target } = getIds();
+            
+            if (!source) {
+                log("Source Guild ID is required!", "error");
+                return;
+            }
+
+            if (selectedOptions.size === 0) {
+                log("No options selected!", "error");
+                return;
+            }
+
+            if (selectedOptions.has('$')) {
+                const backupFile = document.getElementById('backup-file').value.trim();
+                if (!backupFile) {
+                    log("Backup file required for restore!", "error");
+                    return;
+                }
+                if (!target) {
+                    log("Target Guild ID required for restore!", "error");
+                    return;
+                }
+            }
+
+            if (selectedOptions.has('*') && !target) {
+                log("Target Guild ID required for full clone!", "error");
+                return;
+            }
+
+            if (!selectedOptions.has('6') && !selectedOptions.has('$') && !selectedOptions.has('10') && !target) {
+                log("Target Guild ID required for this operation!", "error");
+                return;
+            }
+
+            if (!confirm(`Execute ${selectedOptions.size} operation(s)?\nSource: ${source}\nTarget: ${target || 'N/A'}`)) {
+                log("Operation cancelled.", "info");
+                return;
+            }
+
+            log("Processing request...", "info");
+
+            if (window.pywebview && window.pywebview.api) {
+                const params = {
+                    source_id: source,
+                    target_id: target,
+                    options: Array.from(selectedOptions),
+                    backup_file: document.getElementById('backup-file').value.trim()
+                };
+
+                window.pywebview.api.run_tool('server_cloner', 'execute', params)
+                    .then(response => {
+                        if (response.success) {
+                            log(response.message, "success");
+                            if (response.details) {
+                                response.details.forEach(d => log(d, "info"));
+                            }
+                        } else {
+                            log(response.message, "error");
+                        }
+                    })
+                    .catch(err => {
+                        log("Engine Error: " + err, "error");
+                    });
+            } else {
+                log("Error: API not detected.", "error");
+            }
+        }
+
+        function quickBackup() {
+            const { source } = getIds();
+            if (!source) {
+                log("Source Guild ID required for backup!", "error");
+                return;
+            }
+
+            if (confirm(`Create backup for guild: ${source}?`)) {
+                log("Creating backup...", "info");
+
+                if (window.pywebview && window.pywebview.api) {
+                    window.pywebview.api.run_tool('server_cloner', 'backup', { source_id: source })
+                        .then(response => {
+                            if (response.success) {
+                                log(response.message, "success");
+                                if (response.filename) {
+                                    document.getElementById('backup-file').value = response.filename;
+                                }
+                            } else {
+                                log(response.message, "error");
+                            }
+                        })
+                        .catch(err => {
+                            log("Backup Error: " + err, "error");
+                        });
+                } else {
+                    log("Error: API not detected.", "error");
+                }
+            }
+        }
+    </script>
+</body>
+</html>
