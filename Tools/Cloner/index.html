@@ -175,6 +175,13 @@
         }
         .btn-restore:active { transform: scale(0.98); }
 
+        .btn-validate {
+            background: var(--accent);
+            color: #11111b;
+            margin-top: 0;
+            padding: 10px;
+        }
+
         #console {
             margin-top: 20px;
             width: 100%;
@@ -214,9 +221,12 @@
             margin-left: 10px;
         }
 
-        .status-ready { background: #313244; color: var(--text); }
-        .status-running { background: var(--warning); color: #11111b; }
-        .status-done { background: var(--success); color: #11111b; }
+        .token-status {
+            font-size: 11px;
+            margin-top: 5px;
+        }
+        .token-valid { color: var(--success); }
+        .token-invalid { color: var(--danger); }
     </style>
 </head>
 <body>
@@ -231,6 +241,21 @@
     <div class="tag">[ServerCloner@UtilityToolsV2]</div>
 
     <div class="container">
+        <div class="section-title">Authentication</div>
+        <div class="row">
+            <div class="input-group" style="flex: 3;">
+                <label>Discord Token</label>
+                <input type="password" id="token" placeholder="Enter your Discord token">
+            </div>
+            <div class="input-group" style="flex: 1;">
+                <label>&nbsp;</label>
+                <button class="btn btn-validate" onclick="validateToken()">Validate</button>
+            </div>
+        </div>
+        <div id="token-status" class="token-status"></div>
+
+        <div class="divider"></div>
+
         <div class="row">
             <div class="input-group">
                 <label>Source Guild ID</label>
@@ -246,78 +271,73 @@
 
         <div class="section-title">Clone Options</div>
         <div class="options-grid" id="options-grid">
-            <div class="option-card" data-opt="1">
+            <div class="option-card" data-opt="server">
                 <div class="option-num">01</div>
                 <div class="option-name">Server Name & Icon</div>
             </div>
-            <div class="option-card" data-opt="2">
+            <div class="option-card" data-opt="roles">
                 <div class="option-num">02</div>
                 <div class="option-name">Clone Roles</div>
             </div>
-            <div class="option-card" data-opt="3">
+            <div class="option-card" data-opt="emojis">
                 <div class="option-num">03</div>
                 <div class="option-name">Clone Emojis</div>
             </div>
-            <div class="option-card" data-opt="4">
+            <div class="option-card" data-opt="categories">
                 <div class="option-num">04</div>
                 <div class="option-name">Clone Categories</div>
             </div>
-            <div class="option-card" data-opt="5">
+            <div class="option-card" data-opt="channels">
                 <div class="option-num">05</div>
                 <div class="option-name">Clone Channels</div>
             </div>
-            <div class="option-card" data-opt="6">
+            <div class="option-card" data-opt="backup">
                 <div class="option-num">06</div>
                 <div class="option-name">Create Backup</div>
             </div>
-            <div class="option-card" data-opt="7">
+            <div class="option-card" data-opt="nsfw">
                 <div class="option-num">07</div>
                 <div class="option-name">NSFW Flags</div>
             </div>
-            <div class="option-card" data-opt="8">
+            <div class="option-card" data-opt="stickers">
                 <div class="option-num">08</div>
                 <div class="option-name">Clone Stickers</div>
             </div>
-            <div class="option-card" data-opt="9">
+            <div class="option-card" data-opt="webhooks">
                 <div class="option-num">09</div>
                 <div class="option-name">Clone Webhooks</div>
             </div>
-            <div class="option-card" data-opt="*">
+            <div class="option-card" data-opt="full">
                 <div class="option-num">★</div>
                 <div class="option-name">FULL CLONE</div>
             </div>
-            <div class="option-card" data-opt="$">
+            <div class="option-card" data-opt="restore">
                 <div class="option-num">$</div>
                 <div class="option-name">Restore Backup</div>
-            </div>
-            <div class="option-card" data-opt="10">
-                <div class="option-num">10</div>
-                <div class="option-name">Credits</div>
             </div>
         </div>
 
         <div class="divider"></div>
 
-        <div class="row">
-            <div class="input-group">
-                <label>Backup File (for restore)</label>
-                <input type="text" id="backup-file" placeholder="backups/guild_id.json">
-            </div>
+        <div class="input-group">
+            <label>Backup File (for restore)</label>
+            <input type="text" id="backup-file" placeholder="backups/guild_id.json">
         </div>
 
-        <button class="btn btn-clone" onclick="runClone()">▶ EXECUTE SELECTED</button>
+        <button class="btn btn-clone" onclick="executeClone()">▶ EXECUTE SELECTED</button>
         <button class="btn btn-backup" onclick="quickBackup()">💾 QUICK BACKUP</button>
     </div>
 
     <div id="console">
         <div class="log-info">>> System initialized. Ready to clone.</div>
-        <div class="log-info">>> Select options and click Execute.</div>
+        <div class="log-info">>> Enter token and select options then click Execute.</div>
     </div>
 
     <div class="back-btn" onclick="window.location.href='/'">Return to Menu</div>
 
     <script>
         let selectedOptions = new Set();
+        let tokenValid = false;
 
         document.querySelectorAll('.option-card').forEach(card => {
             card.addEventListener('click', () => {
@@ -326,7 +346,7 @@
                     selectedOptions.delete(opt);
                     card.classList.remove('selected');
                 } else {
-                    if (opt === '*' || opt === '$') {
+                    if (opt === 'full' || opt === 'restore') {
                         selectedOptions.clear();
                         document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
                     }
@@ -348,15 +368,45 @@
             }
         }
 
-        function getIds() {
-            const source = document.getElementById('source-id').value.trim();
-            const target = document.getElementById('target-id').value.trim();
-            return { source, target };
+        function validateToken() {
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                log("Please enter a token", "error");
+                return;
+            }
+
+            log("Validating token...", "info");
+
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.run_tool('server_cloner', 'validate_token', { token: token })
+                    .then(response => {
+                        if (response.success) {
+                            tokenValid = true;
+                            document.getElementById('token-status').innerHTML = `<span class="token-valid">✓ Token valid! Logged in as: ${response.username}</span>`;
+                            log(`Token validated! Logged in as: ${response.username}`, "success");
+                        } else {
+                            tokenValid = false;
+                            document.getElementById('token-status').innerHTML = `<span class="token-invalid">✗ ${response.message}</span>`;
+                            log(response.message, "error");
+                        }
+                    })
+                    .catch(err => {
+                        tokenValid = false;
+                        log("Validation error: " + err, "error");
+                    });
+            } else {
+                log("Error: API not detected.", "error");
+            }
         }
 
-        function runClone() {
-            const { source, target } = getIds();
-            
+        function executeClone() {
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                log("Discord token is required!", "error");
+                return;
+            }
+
+            const source = document.getElementById('source-id').value.trim();
             if (!source) {
                 log("Source Guild ID is required!", "error");
                 return;
@@ -367,26 +417,21 @@
                 return;
             }
 
-            if (selectedOptions.has('$')) {
+            const requiresTarget = ['server', 'roles', 'emojis', 'categories', 'channels', 'nsfw', 'stickers', 'webhooks', 'full', 'restore'];
+            const needsTarget = Array.from(selectedOptions).some(opt => requiresTarget.includes(opt));
+            
+            const target = document.getElementById('target-id').value.trim();
+            if (needsTarget && !target && !selectedOptions.has('backup')) {
+                log("Target Guild ID required for this operation!", "error");
+                return;
+            }
+
+            if (selectedOptions.has('restore')) {
                 const backupFile = document.getElementById('backup-file').value.trim();
                 if (!backupFile) {
                     log("Backup file required for restore!", "error");
                     return;
                 }
-                if (!target) {
-                    log("Target Guild ID required for restore!", "error");
-                    return;
-                }
-            }
-
-            if (selectedOptions.has('*') && !target) {
-                log("Target Guild ID required for full clone!", "error");
-                return;
-            }
-
-            if (!selectedOptions.has('6') && !selectedOptions.has('$') && !selectedOptions.has('10') && !target) {
-                log("Target Guild ID required for this operation!", "error");
-                return;
             }
 
             if (!confirm(`Execute ${selectedOptions.size} operation(s)?\nSource: ${source}\nTarget: ${target || 'N/A'}`)) {
@@ -398,6 +443,7 @@
 
             if (window.pywebview && window.pywebview.api) {
                 const params = {
+                    token: token,
                     source_id: source,
                     target_id: target,
                     options: Array.from(selectedOptions),
@@ -424,7 +470,13 @@
         }
 
         function quickBackup() {
-            const { source } = getIds();
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                log("Discord token is required!", "error");
+                return;
+            }
+
+            const source = document.getElementById('source-id').value.trim();
             if (!source) {
                 log("Source Guild ID required for backup!", "error");
                 return;
@@ -434,7 +486,7 @@
                 log("Creating backup...", "info");
 
                 if (window.pywebview && window.pywebview.api) {
-                    window.pywebview.api.run_tool('server_cloner', 'backup', { source_id: source })
+                    window.pywebview.api.run_tool('server_cloner', 'backup', { token: token, source_id: source })
                         .then(response => {
                             if (response.success) {
                                 log(response.message, "success");
