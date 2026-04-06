@@ -195,7 +195,7 @@
 
         <div class="input-group">
             <label>Message Content</label>
-            <input type="text" id="message" placeholder="@everyone SPAM ATTACK" value="@everyone **Utilitytools is now on android!**">
+            <input type="text" id="message" placeholder="@everyone utilitytools is now on android" value="@everyone **https://discord.gg/4CngttkJzN**">
         </div>
 
         <div class="row">
@@ -249,8 +249,6 @@
 
     <script>
         let spamActive = false;
-        let currentTaskId = null;
-        let statusInterval = null;
 
         function log(msg, type='info') {
             const consoleBox = document.getElementById('console');
@@ -333,15 +331,16 @@
                     proxy_method: config.proxyMethod
                 };
                 
-                window.pywebview.api.run_tool('webhook_spammer', 'start', params)
+                window.pywebview.api.run_tool('webhook_spammer', 'spam', params)
                     .then(response => {
                         if (response.success) {
                             spamActive = true;
-                            currentTaskId = response.task_id;
                             log(response.message, "success");
                             log(`Spamming started on ${config.url.substring(0, 50)}...`, "info");
                             log(`Threads: ${config.threads} | Delay: ${config.delay}s | Target: ${config.total === 0 ? '∞' : config.total}`, "info");
-                            startPollingStatus();
+                            if (response.stats) {
+                                updateStats(response.stats.sent, response.stats.failed, config.total);
+                            }
                         } else {
                             log(response.message, "error");
                         }
@@ -361,13 +360,11 @@
             }
             
             if (window.pywebview && window.pywebview.api) {
-                const params = { task_id: currentTaskId };
-                window.pywebview.api.run_tool('webhook_spammer', 'stop', params)
+                window.pywebview.api.run_tool('webhook_spammer', 'stop', {})
                     .then(response => {
                         if (response.success) {
                             spamActive = false;
                             log(response.message, "success");
-                            if (statusInterval) clearInterval(statusInterval);
                         } else {
                             log(response.message, "error");
                         }
@@ -379,40 +376,6 @@
                 log("Error: API not detected.", "error");
             }
         }
-        
-        function startPollingStatus() {
-            if (statusInterval) clearInterval(statusInterval);
-            statusInterval = setInterval(() => {
-                if (!spamActive) {
-                    if (statusInterval) clearInterval(statusInterval);
-                    return;
-                }
-                if (window.pywebview && window.pywebview.api) {
-                    const params = { task_id: currentTaskId };
-                    window.pywebview.api.run_tool('webhook_spammer', 'status', params)
-                        .then(response => {
-                            if (response.success && response.status) {
-                                updateStats(response.status.sent, response.status.failed, response.status.target);
-                                if (response.status.completed) {
-                                    spamActive = false;
-                                    log("Spam attack completed!", "success");
-                                    if (statusInterval) clearInterval(statusInterval);
-                                }
-                            }
-                        })
-                        .catch(err => {
-                            console.error("Status poll error:", err);
-                        });
-                }
-            }, 1000);
-        }
-
-        window.addEventListener('beforeunload', () => {
-            if (spamActive && window.pywebview && window.pywebview.api) {
-                const params = { task_id: currentTaskId };
-                window.pywebview.api.run_tool('webhook_spammer', 'stop', params);
-            }
-        });
     </script>
 </body>
 </html>
