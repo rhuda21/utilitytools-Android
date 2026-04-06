@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UtilityTools V2</title>
+    <style>
+        :root { --bg: #11111b; --card: #1e1e2e; --text: #cdd6f4; --accent: #89b4fa; --border: #45475a; --muted: #a6adc8; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg); color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px; min-height: 100vh;
+        }
+
+        .ascii-art {
+            white-space: pre; font-size: 7px;
+            background: linear-gradient(90deg, #89dceb, #89b4fa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-align: center; margin-bottom: 4px; line-height: 1.2;
+        }
+
+        .tag { color: #7f849c; font-size: 12px; margin-bottom: 24px; }
+
+        .grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 12px; width: 100%; max-width: 400px;
+        }
+
+        .tool-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 15px; padding: 20px; text-align: center;
+            transition: 0.2s; cursor: pointer; user-select: none;
+        }
+
+        .tool-card:active { transform: scale(0.95); background: #313244; }
+        .icon { font-size: 32px; margin-bottom: 10px; display: block; }
+        .name { font-weight: 600; font-size: 13px; }
+
+        #status {
+            margin-top: 24px; font-size: 12px;
+            color: var(--muted); font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="ascii-art">
+  __  ____  _ ___ __       ______            __    _    _____
+ / / / / /_(_) (_) /___  _/_  __/___  ____  / /___| |  / /__ \
+/ / / / __/ / / / __/ / / // / / __ \/ __ \/ / ___/ | / /__/ /
+/_/ / /_/ / / / /_/ /_/ // / / /_/ / /_/ / (__  )| |/ // __/
+\____/\__/_/_/_/\__/ \__, //_/  \____/____/_/____/ |___//____/
+                    /____/
+    </div>
+    <div class="grid" id="tool-grid"></div>
+    <div id="status">Syncing...</div>
+
+    <script>
+        function displayTools(tools) {
+            const grid = document.getElementById('tool-grid');
+            grid.innerHTML = '';
+            tools.forEach(tool => {
+                const div = document.createElement('div');
+                div.className = 'tool-card';
+                div.onclick = () => window.pywebview.api.handle_tool_click(tool.id);
+                div.innerHTML = `<span class="icon">${tool.icon}</span><span class="name">${tool.name}</span>`;
+                grid.appendChild(div);
+            });
+            document.getElementById('status').innerText = 'System Ready';
+        }
+
+        function showUpdatePrompt(version, url) {
+            if (confirm('Update v' + version + ' available! Install now?')) {
+                document.getElementById('status').innerText = 'Downloading update...';
+                window.pywebview.api.install_update(url);
+            }
+        }
+
+        function updateStatus(msg) {
+            document.getElementById('status').innerText = msg;
+        }
+    </script>
+</body>
+</html>
