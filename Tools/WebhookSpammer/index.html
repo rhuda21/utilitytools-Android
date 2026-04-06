@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webhook Spammer</title>
+    <style>
+        :root {
+            --bg: #0f0f14;
+            --card: #16161e;
+            --accent: #89b4fa;
+            --text: #cdd6f4;
+            --danger: #f38ba8;
+            --success: #a6e3a1;
+            --warning: #f9e2af;
+            --border: #313244;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .ascii-art {
+            white-space: pre;
+            font-size: 8px;
+            background: linear-gradient(90deg, #89dceb, #89b4fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+
+        .tag { color: #7f849c; font-size: 14px; margin-bottom: 20px; }
+
+        .container {
+            width: 100%;
+            max-width: 550px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+        }
+
+        label { display: block; margin-bottom: 8px; font-size: 13px; color: var(--accent); }
+        label::before { content: "[>] "; }
+
+        input, select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            color: var(--text);
+            border-radius: 4px;
+            outline: none;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 13px;
+        }
+
+        input:focus, select:focus { border-color: var(--accent); }
+
+        .row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .row .input-group { flex: 1; }
+
+        .input-group { margin-bottom: 15px; }
+
+        .proxy-box {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 15px 0;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+        .checkbox-label input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            margin: 0;
+        }
+        .checkbox-label span { color: var(--text); margin: 0; }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-spam { 
+            background: linear-gradient(90deg, #f38ba8, #f9e2af);
+            color: #11111b; 
+        }
+        .btn-spam:active { transform: scale(0.98); opacity: 0.9; }
+        .btn-stop { 
+            background: #313244;
+            color: var(--text);
+            margin-top: 8px;
+        }
+        .btn-stop:active { transform: scale(0.98); }
+
+        #console {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 550px;
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 12px;
+            min-height: 180px;
+            max-height: 250px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        .log-info { color: var(--accent); }
+        .log-success { color: var(--success); }
+        .log-error { color: var(--danger); }
+        .log-warning { color: var(--warning); }
+
+        .back-btn {
+            margin-top: 20px;
+            color: #7f849c;
+            text-decoration: none;
+            font-size: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid transparent;
+        }
+        .back-btn:hover { border-bottom: 1px solid #7f849c; }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 11px;
+            color: #7f849c;
+            max-width: 550px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ascii-art">
+   __  ____  _ ___ __       ______            __    _    _____      
+  / / / / /_(_) (_) /___  _/_  __/___  ____  / /___| |  / /__ \     
+ / / / / __/ / / / __/ / / // / / __ \/ __ \/ / ___/ | / /__/ /     
+/ /_/ / /_/ / / / /_/ /_/ // / / /_/ / /_/ / (__  )| |/ // __/      
+\____/\__/_/_/_/\__/ \__, //_/  \____/\____/_/____/ |___//____/      
+                    /____/                                           
+    </div>
+    <div class="tag">[WebhookSpammer@UtilityToolsV2]</div>
+
+    <div class="container">
+        <div class="input-group">
+            <label>Webhook URL</label>
+            <input type="text" id="webhook-url" placeholder="https://discord.com/api/webhooks/...">
+        </div>
+
+        <div class="input-group">
+            <label>Message Content</label>
+            <input type="text" id="message" placeholder="@everyone SPAM ATTACK" value="@everyone **WEBHOOK FLOOD**">
+        </div>
+
+        <div class="row">
+            <div class="input-group">
+                <label>Threads (1-6)</label>
+                <input type="number" id="threads" min="1" max="6" value="4">
+            </div>
+            <div class="input-group">
+                <label>Delay (seconds)</label>
+                <input type="number" id="delay" step="0.1" min="0" value="0.5">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>Total Messages (0 = unlimited)</label>
+            <input type="number" id="total-msgs" min="0" value="100">
+        </div>
+
+        <div class="proxy-box">
+            <label class="checkbox-label">
+                <input type="checkbox" id="proxy-toggle">
+                <span>🌐 Use Proxy</span>
+            </label>
+            <div id="proxy-method-div" style="display: none; margin-top: 10px;">
+                <label>Proxy Method</label>
+                <select id="proxy-method">
+                    <option value="forwarder">Forwarder</option>
+                    <option value="http">HTTP</option>
+                    <option value="socks5">SOCKS5</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <button class="btn btn-spam" onclick="startSpam()">START SPAMMING</button>
+        <button class="btn btn-stop" onclick="stopSpam()">STOP SPAMMING</button>
+    </div>
+
+    <div id="console">
+        <div class="log-info">>> System initialized. Ready to spam.</div>
+    </div>
+
+    <div class="stats">
+        <span>Sent: <span id="sent-count">0</span></span>
+        <span>Failed: <span id="failed-count">0</span></span>
+        <span>Target: <span id="target-display">0</span></span>
+    </div>
+
+    <div class="back-btn" onclick="window.location.href='/'">Return to Menu</div>
+
+    <script>
+        let spamActive = false;
+        let currentTaskId = null;
+        let statusInterval = null;
+
+        function log(msg, type='info') {
+            const consoleBox = document.getElementById('console');
+            const div = document.createElement('div');
+            div.className = `log-${type}`;
+            div.innerText = `>> ${msg}`;
+            consoleBox.appendChild(div);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+            while (consoleBox.children.length > 150) {
+                consoleBox.removeChild(consoleBox.firstChild);
+            }
+        }
+
+        function updateStats(sent, failed, target) {
+            document.getElementById('sent-count').innerText = sent;
+            document.getElementById('failed-count').innerText = failed;
+            document.getElementById('target-display').innerText = target === 0 ? '∞' : target;
+        }
+
+        const proxyToggle = document.getElementById('proxy-toggle');
+        const proxyMethodDiv = document.getElementById('proxy-method-div');
+        
+        proxyToggle.addEventListener('change', (e) => {
+            proxyMethodDiv.style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        function validateInputs() {
+            const url = document.getElementById('webhook-url').value.trim();
+            if (!url.startsWith("https://discord.com/api/webhooks/")) {
+                log("Invalid Discord Webhook format!", "error");
+                return null;
+            }
+            const threads = parseInt(document.getElementById('threads').value);
+            if (isNaN(threads) || threads < 1 || threads > 6) {
+                log("Threads must be between 1 and 6", "error");
+                return null;
+            }
+            const delay = parseFloat(document.getElementById('delay').value);
+            if (isNaN(delay) || delay < 0) {
+                log("Delay must be a positive number", "error");
+                return null;
+            }
+            const total = parseInt(document.getElementById('total-msgs').value);
+            if (isNaN(total) || total < 0) {
+                log("Total messages must be 0 or positive", "error");
+                return null;
+            }
+            const message = document.getElementById('message').value.trim();
+            if (!message) {
+                log("Message content cannot be empty", "error");
+                return null;
+            }
+            return { url, threads, delay, total, message, useProxy: proxyToggle.checked, proxyMethod: document.getElementById('proxy-method').value };
+        }
+
+        function startSpam() {
+            if (spamActive) {
+                log("Spam already running! Stop it first.", "warning");
+                return;
+            }
+
+            const config = validateInputs();
+            if (!config) return;
+
+            if (!confirm(`Start spam attack?\nTarget: ${config.url.substring(0, 50)}...\nThreads: ${config.threads}\nDelay: ${config.delay}s\nTotal: ${config.total === 0 ? 'UNLIMITED' : config.total}\nProxy: ${config.useProxy ? 'ON (' + config.proxyMethod + ')' : 'OFF'}`)) {
+                log("Spam cancelled.", "info");
+                return;
+            }
+
+            log("Processing request...");
+            
+            if (window.pywebview && window.pywebview.api) {
+                const params = {
+                    webhook_url: config.url,
+                    content: config.message,
+                    thread_count: config.threads,
+                    total_messages: config.total,
+                    delay: config.delay,
+                    proxies: config.useProxy,
+                    proxy_method: config.proxyMethod
+                };
+                
+                window.pywebview.api.run_tool('webhook_spammer', 'start', params)
+                    .then(response => {
+                        if (response.success) {
+                            spamActive = true;
+                            currentTaskId = response.task_id;
+                            log(response.message, "success");
+                            log(`Spamming started on ${config.url.substring(0, 50)}...`, "info");
+                            log(`Threads: ${config.threads} | Delay: ${config.delay}s | Target: ${config.total === 0 ? '∞' : config.total}`, "info");
+                            startPollingStatus();
+                        } else {
+                            log(response.message, "error");
+                        }
+                    })
+                    .catch(err => {
+                        log("Engine Error: " + err, "error");
+                    });
+            } else {
+                log("Error: API not detected.", "error");
+            }
+        }
+
+        function stopSpam() {
+            if (!spamActive) {
+                log("No active spam to stop.", "info");
+                return;
+            }
+            
+            if (window.pywebview && window.pywebview.api) {
+                const params = { task_id: currentTaskId };
+                window.pywebview.api.run_tool('webhook_spammer', 'stop', params)
+                    .then(response => {
+                        if (response.success) {
+                            spamActive = false;
+                            log(response.message, "success");
+                            if (statusInterval) clearInterval(statusInterval);
+                        } else {
+                            log(response.message, "error");
+                        }
+                    })
+                    .catch(err => {
+                        log("Stop Error: " + err, "error");
+                    });
+            } else {
+                log("Error: API not detected.", "error");
+            }
+        }
+        
+        function startPollingStatus() {
+            if (statusInterval) clearInterval(statusInterval);
+            statusInterval = setInterval(() => {
+                if (!spamActive) {
+                    if (statusInterval) clearInterval(statusInterval);
+                    return;
+                }
+                if (window.pywebview && window.pywebview.api) {
+                    const params = { task_id: currentTaskId };
+                    window.pywebview.api.run_tool('webhook_spammer', 'status', params)
+                        .then(response => {
+                            if (response.success && response.status) {
+                                updateStats(response.status.sent, response.status.failed, response.status.target);
+                                if (response.status.completed) {
+                                    spamActive = false;
+                                    log("Spam attack completed!", "success");
+                                    if (statusInterval) clearInterval(statusInterval);
+                                }
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Status poll error:", err);
+                        });
+                }
+            }, 1000);
+        }
+
+        window.addEventListener('beforeunload', () => {
+            if (spamActive && window.pywebview && window.pywebview.api) {
+                const params = { task_id: currentTaskId };
+                window.pywebview.api.run_tool('webhook_spammer', 'stop', params);
+            }
+        });
+    </script>
+</body>
+</html>
