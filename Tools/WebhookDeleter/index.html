@@ -142,7 +142,15 @@
         <div class="log-info">>> System initialized. Waiting for input...</div>
     </div>
 
-    <div class="back-btn" onclick="window.location.href='/'">Return to Menu</div>
+    <div class="back-btn" onclick="window.pywebview.api.go_home()">Return to Menu</div>
+    <script>
+        history.pushState({page: 'tool'}, '', '');
+        window.addEventListener('popstate', function(e) {
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.go_home();
+            }
+        });
+        </script>
 
     <script>
         function log(msg, type='info') {
