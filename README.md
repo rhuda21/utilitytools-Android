@@ -75,5 +75,10 @@ buildozer android debug
 3. Push to GitHub — the app picks it up automatically on next launch
 
 ---
+> [!WARNING]
+> **Disclaimer:** This tool is for educational and personal use only. The developers are not responsible for your actions or any misuse of this tool.
+---
 
-## 📁 Project Structure
+<p align="center">
+Built with 💙 by <a href="https://www.utilitytoolsv2.store/tools/free">UtilityToolsV2</a>
+</p>
