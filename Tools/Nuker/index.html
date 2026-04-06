@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Nuker | UtilityToolsV2</title>
+    <style>
+        :root {
+            --bg: #0f0f14;
+            --card: #16161e;
+            --accent: #89b4fa;
+            --accent2: #a6e3a1;
+            --text: #cdd6f4;
+            --danger: #f38ba8;
+            --success: #a6e3a1;
+            --warning: #f9e2af;
+            --border: #313244;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        .ascii-art {
+            white-space: pre;
+            font-size: 6px;
+            background: linear-gradient(90deg, #f38ba8, #f9e2af, #a6e3a1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+
+        .tag { color: #7f849c; font-size: 14px; margin-bottom: 20px; text-align: center; }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+        }
+
+        .section-title {
+            color: var(--accent);
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .section-title::before { content: "[>] "; }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: var(--accent);
+        }
+        label::before { content: "[>] "; }
+
+        input, select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+            color: var(--text);
+            border-radius: 4px;
+            outline: none;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 13px;
+        }
+
+        input:focus, select:focus { border-color: var(--accent); }
+
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+        .row .input-group { flex: 1; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .option-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .option-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .option-card.selected {
+            border-color: var(--success);
+            background: rgba(166, 227, 161, 0.1);
+        }
+
+        .option-num {
+            color: var(--danger);
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .option-name {
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-nuke {
+            background: linear-gradient(90deg, #f38ba8, #f9e2af);
+            color: #11111b;
+        }
+        .btn-nuke:active { transform: scale(0.98); opacity: 0.9; }
+
+        .btn-preset {
+            background: #313244;
+            color: var(--text);
+        }
+        .btn-preset:active { transform: scale(0.98); }
+
+        #console {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 800px;
+            background: #000;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 12px;
+            min-height: 200px;
+            max-height: 300px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        .log-info { color: var(--accent); }
+        .log-success { color: var(--success); }
+        .log-error { color: var(--danger); }
+        .log-warning { color: var(--warning); }
+
+        .back-btn {
+            margin-top: 20px;
+            color: #7f849c;
+            text-decoration: none;
+            font-size: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid transparent;
+        }
+        .back-btn:hover { border-bottom: 1px solid #7f849c; }
+
+        .preset-list {
+            margin-top: 10px;
+            padding: 10px;
+            background: var(--bg);
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .preset-item {
+            padding: 5px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .preset-item:hover {
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ascii-art">
+   __  __      _   __      __            
+  / / / /     / | / /_  __/ /_____  _____
+ / / / /_____/  |/ / / / / //_/ _ \/ ___/
+/ /_/ /_____/ /|  / /_/ / ,< /  __/ /    
+\____/     /_/ |_/\__,_/_/|_|\___/_/     
+    </div>
+    <div class="tag">[DiscordNuker@UtilityToolsV2]</div>
+
+    <div class="container">
+        <div class="input-group">
+            <label>Bot Token</label>
+            <input type="password" id="token" placeholder="Enter your bot token">
+        </div>
+
+        <div class="input-group">
+            <label>Server/Guild ID</label>
+            <input type="text" id="guild-id" placeholder="Server ID to nuke">
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-title">Raid Options</div>
+        <div class="options-grid" id="options-grid">
+            <div class="option-card" data-opt="1"><div class="option-num">01</div><div class="option-name">Delete Channels</div></div>
+            <div class="option-card" data-opt="2"><div class="option-num">02</div><div class="option-name">Spam Channels</div></div>
+            <div class="option-card" data-opt="3"><div class="option-num">03</div><div class="option-name">Delete Roles</div></div>
+            <div class="option-card" data-opt="4"><div class="option-num">04</div><div class="option-name">Create Roles</div></div>
+            <div class="option-card" data-opt="5"><div class="option-num">05</div><div class="option-name">Ban Members</div></div>
+            <div class="option-card" data-opt="6"><div class="option-num">06</div><div class="option-name">Webhook Spam</div></div>
+            <div class="option-card" data-opt="7"><div class="option-num">07</div><div class="option-name">Rename Server</div></div>
+            <div class="option-card" data-opt="8"><div class="option-num">08</div><div class="option-name">NSFW All</div></div>
+            <div class="option-card" data-opt="9"><div class="option-num">09</div><div class="option-name">Message Spam</div></div>
+            <div class="option-card" data-opt="10"><div class="option-num">10</div><div class="option-name">Admin All</div></div>
+            <div class="option-card" data-opt="11"><div class="option-num">11</div><div class="option-name">Remove NSFW</div></div>
+            <div class="option-card" data-opt="12"><div class="option-num">12</div><div class="option-name">Spam GIFs</div></div>
+            <div class="option-card" data-opt="13"><div class="option-num">13</div><div class="option-name">Delete VC</div></div>
+            <div class="option-card" data-opt="14"><div class="option-num">14</div><div class="option-name">Create VC</div></div>
+            <div class="option-card" data-opt="15"><div class="option-num">15</div><div class="option-name">Delete Emojis</div></div>
+            <div class="option-card" data-opt="16"><div class="option-num">16</div><div class="option-name">Kick Bots</div></div>
+            <div class="option-card" data-opt="17"><div class="option-num">17</div><div class="option-name">Disable Community</div></div>
+            <div class="option-card" data-opt="18"><div class="option-num">18</div><div class="option-name">Delete Automod</div></div>
+            <div class="option-card" data-opt="19"><div class="option-num">19</div><div class="option-name">Disable Onboard</div></div>
+            <div class="option-card" data-opt="full"><div class="option-num">★</div><div class="option-name">FULL NUKE</div></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-title">Nuke Settings</div>
+        <div class="row">
+            <div class="input-group">
+                <label>New Server Name</label>
+                <input type="text" id="new-name" placeholder="NUKED BY UTILITY">
+            </div>
+            <div class="input-group">
+                <label>Channel Prefix</label>
+                <input type="text" id="channel-prefix" placeholder="nuked-by">
+            </div>
+        </div>
+        <div class="row">
+            <div class="input-group">
+                <label>Channel Amount</label>
+                <input type="number" id="channel-amount" value="50">
+            </div>
+            <div class="input-group">
+                <label>Spam Message</label>
+                <input type="text" id="spam-msg" placeholder="@everyone SERVER RAIDED">
+            </div>
+        </div>
+        <div class="row">
+            <div class="input-group">
+                <label>Spam Count</label>
+                <input type="number" id="spam-count" value="1500">
+            </div>
+            <div class="input-group">
+                <label>Role Prefix</label>
+                <input type="text" id="role-prefix" placeholder="GET FUCKED">
+            </div>
+        </div>
+        <div class="row">
+            <div class="input-group">
+                <label>Role Amount</label>
+                <input type="number" id="role-amount" value="50">
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section-title">Presets</div>
+        <div class="row">
+            <div class="input-group">
+                <label>Preset Name</label>
+                <input type="text" id="preset-name" placeholder="my_preset">
+            </div>
+            <div class="input-group" style="flex: 0.5;">
+                <label>&nbsp;</label>
+                <button class="btn btn-preset" onclick="savePreset()">Save Preset</button>
+            </div>
+        </div>
+        <div id="preset-list" class="preset-list"></div>
+
+        <button class="btn btn-nuke" onclick="executeNuke()">💀 EXECUTE NUKE 💀</button>
+    </div>
+
+    <div id="console">
+        <div class="log-info">>> System initialized. Ready to nuke.</div>
+        <div class="log-info">>> Enter bot token and server ID, then select options.</div>
+    </div>
+
+    <div class="back-btn" onclick="window.location.href='/'">Return to Menu</div>
+
+    <script>
+        let selectedOptions = new Set();
+
+        document.querySelectorAll('.option-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const opt = card.dataset.opt;
+                if (selectedOptions.has(opt)) {
+                    selectedOptions.delete(opt);
+                    card.classList.remove('selected');
+                } else {
+                    if (opt === 'full') {
+                        selectedOptions.clear();
+                        document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+                    }
+                    selectedOptions.add(opt);
+                    card.classList.add('selected');
+                }
+            });
+        });
+
+        function log(msg, type = 'info') {
+            const consoleBox = document.getElementById('console');
+            const div = document.createElement('div');
+            div.className = `log-${type}`;
+            div.innerText = `>> ${msg}`;
+            consoleBox.appendChild(div);
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+            while (consoleBox.children.length > 200) {
+                consoleBox.removeChild(consoleBox.firstChild);
+            }
+        }
+
+        function loadPresets() {
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.run_tool('discord_nuker', 'list_presets', {})
+                    .then(response => {
+                        if (response.success && response.presets) {
+                            const container = document.getElementById('preset-list');
+                            container.innerHTML = '';
+                            response.presets.forEach(preset => {
+                                const div = document.createElement('div');
+                                div.className = 'preset-item';
+                                div.innerText = preset;
+                                div.onclick = () => loadPreset(preset);
+                                container.appendChild(div);
+                            });
+                        }
+                    })
+                    .catch(err => console.error(err));
+            }
+        }
+
+        function loadPreset(name) {
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.run_tool('discord_nuker', 'load_preset', { name: name })
+                    .then(response => {
+                        if (response.success && response.config) {
+                            document.getElementById('new-name').value = response.config.new_name || '';
+                            document.getElementById('channel-prefix').value = response.config.channel_prefix || '';
+                            document.getElementById('channel-amount').value = response.config.channel_amount || 50;
+                            document.getElementById('spam-msg').value = response.config.spam_msg || '';
+                            document.getElementById('spam-count').value = response.config.spam_count || 1500;
+                            document.getElementById('role-prefix').value = response.config.role_prefix || '';
+                            document.getElementById('role-amount').value = response.config.role_amount || 50;
+                            log(`Loaded preset: ${name}`, "success");
+                        }
+                    })
+                    .catch(err => log("Error loading preset: " + err, "error"));
+            }
+        }
+
+        function savePreset() {
+            const name = document.getElementById('preset-name').value.trim();
+            if (!name) {
+                log("Enter a preset name!", "error");
+                return;
+            }
+
+            const config = {
+                new_name: document.getElementById('new-name').value,
+                channel_prefix: document.getElementById('channel-prefix').value,
+                channel_amount: parseInt(document.getElementById('channel-amount').value),
+                spam_msg: document.getElementById('spam-msg').value,
+                spam_count: parseInt(document.getElementById('spam-count').value),
+                role_prefix: document.getElementById('role-prefix').value,
+                role_amount: parseInt(document.getElementById('role-amount').value)
+            };
+
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.run_tool('discord_nuker', 'save_preset', { name: name, config: config })
+                    .then(response => {
+                        if (response.success) {
+                            log(`Preset "${name}" saved!`, "success");
+                            loadPresets();
+                        } else {
+                            log(response.message, "error");
+                        }
+                    })
+                    .catch(err => log("Error saving preset: " + err, "error"));
+            }
+        }
+
+        function executeNuke() {
+            const token = document.getElementById('token').value.trim();
+            const guildId = document.getElementById('guild-id').value.trim();
+
+            if (!token) {
+                log("Bot token is required!", "error");
+                return;
+            }
+
+            if (!guildId) {
+                log("Server/Guild ID is required!", "error");
+                return;
+            }
+
+            if (selectedOptions.size === 0 && !selectedOptions.has('full')) {
+                log("Select at least one option or FULL NUKE!", "error");
+                return;
+            }
+
+            const config = {
+                token: token,
+                guild_id: guildId,
+                options: Array.from(selectedOptions),
+                settings: {
+                    new_name: document.getElementById('new-name').value || "NUKED BY UTILITY",
+                    channel_prefix: document.getElementById('channel-prefix').value || "nuked-by",
+                    channel_amount: parseInt(document.getElementById('channel-amount').value) || 50,
+                    spam_msg: document.getElementById('spam-msg').value || "@everyone SERVER RAIDED",
+                    spam_count: parseInt(document.getElementById('spam-count').value) || 1500,
+                    role_prefix: document.getElementById('role-prefix').value || "GET FUCKED",
+                    role_amount: parseInt(document.getElementById('role-amount').value) || 50
+                }
+            };
+
+            if (!confirm(`💀 EXECUTE NUKE ON SERVER?\nServer ID: ${guildId}\nOptions: ${config.options.join(', ')}\nThis action is IRREVERSIBLE!`)) {
+                log("Nuke cancelled.", "info");
+                return;
+            }
+
+            log("🔥 INITIATING NUKE SEQUENCE...", "warning");
+            log("Processing request...", "info");
+
+            if (window.pywebview && window.pywebview.api) {
+                window.pywebview.api.run_tool('discord_nuker', 'execute', config)
+                    .then(response => {
+                        if (response.success) {
+                            log(response.message, "success");
+                            if (response.details) {
+                                response.details.forEach(d => log(d, "info"));
+                            }
+                        } else {
+                            log(response.message, "error");
+                        }
+                    })
+                    .catch(err => {
+                        log("Engine Error: " + err, "error");
+                    });
+            } else {
+                log("Error: API not detected.", "error");
+            }
+        }
+
+        loadPresets();
+    </script>
+</body>
+</html>
