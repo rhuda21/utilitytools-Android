@@ -331,7 +331,7 @@
                     proxy_method: config.proxyMethod
                 };
                 
-                window.pywebview.api.run_tool('webhook_spammer', 'spam', params)
+                window.pywebview.api.run_tool('webhook_spammer', 'spam_webhook_v2', params)
                     .then(response => {
                         if (response.success) {
                             spamActive = true;
