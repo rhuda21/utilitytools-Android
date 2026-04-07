@@ -158,7 +158,7 @@
             document.getElementById('system-txt-editor').value = 'Loading...';
             document.getElementById('settings-overlay').classList.add('active');
             if (window.pywebview && window.pywebview.api) {
-                window.pywebview.api.get_system_txt().then(content => {
+                window.pywebview.api.get_file('proxies.txt').then(content => {
                     document.getElementById('system-txt-editor').value = content;
                 });
             }
