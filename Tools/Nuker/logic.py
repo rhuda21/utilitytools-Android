@@ -5,8 +5,10 @@ import os
 import json
 import random
 import certifi
-os.environ['SSL_CERT_FILE'] = certifi.where()
+import ssl
+import aiohttp
 intents = discord.Intents.all()
+ssl_context = ssl.create_default_context(cafile=certifi.where())
 bot = commands.Bot(command_prefix='?', intents=intents)
 PRESET_DIR = "presets"
 
@@ -297,8 +299,10 @@ async def preset_nuke(guild: discord.Guild, preset_name: str):
 
 async def execute_nuke_action(token: str, guild_id: int, action: str, params: dict = None):
     try:
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        connector = aiohttp.TCPConnector(ssl=ssl_context)
         bot_instance = commands.Bot(command_prefix='!', intents=intents)
-        
+        bot_instance.http.connector = connector
         @bot_instance.event
         async def on_ready():
             print(f"Bot connected as {bot_instance.user}")
