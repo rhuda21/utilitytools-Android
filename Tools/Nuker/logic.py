@@ -1,3 +1,5 @@
+import curl_cffi
+from curl_cffi import request as req
 import discord
 from discord.ext import commands
 import asyncio
