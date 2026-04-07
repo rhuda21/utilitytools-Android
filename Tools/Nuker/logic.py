@@ -4,6 +4,8 @@ import asyncio
 import os
 import json
 import random
+import certifi
+os.environ['SSL_CERT_FILE'] = certifi.where()
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='?', intents=intents)
 PRESET_DIR = "presets"
