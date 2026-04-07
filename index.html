@@ -68,6 +68,10 @@
             background: var(--success);
             animation: pulse 1.5s infinite;
         }
+        .status-dot.disconnected {
+            background: var(--danger);
+            animation: none;
+        }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
@@ -151,7 +155,7 @@
     <div class="tag" id="version-tag">[UtilityToolsV2]</div>
 
     <div class="status-bar">
-        <div class="status-dot"></div>
+        <div class="status-dot" id="status-dot"></div>
         <div class="status-text" id="status-text">Loading tools...</div>
     </div>
 
@@ -185,6 +189,8 @@
     </div>
 
     <script>
+        let apiConnected = false;
+
         function showMessage(msg, type = 'error') {
             const banner = document.getElementById('message-banner');
             banner.className = `message-banner ${type} show`;
@@ -194,8 +200,19 @@
             }, 5000);
         }
 
-        function updateStatus(status) {
-            document.getElementById('status-text').innerText = status;
+        function updateStatus(status, isConnected = null) {
+            const statusText = document.getElementById('status-text');
+            const statusDot = document.getElementById('status-dot');
+            statusText.innerText = status;
+            
+            if (isConnected !== null) {
+                apiConnected = isConnected;
+                if (isConnected) {
+                    statusDot.classList.remove('disconnected');
+                } else {
+                    statusDot.classList.add('disconnected');
+                }
+            }
         }
 
         function displayTools(tools) {
@@ -203,7 +220,7 @@
             
             if (!tools || tools.length === 0) {
                 container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">No tools available</div>';
-                updateStatus('No tools found');
+                updateStatus('No tools found', true);
                 return;
             }
             
@@ -213,7 +230,7 @@
                 div.className = 'tool-item';
                 div.onclick = () => {
                     if (window.pywebview && window.pywebview.api) {
-                        window.pywebview.api.handle_tool_click(tool.id);
+                        window.pywebview.api.run_tool(tool.id, 'open', {});
                     } else {
                         showMessage('API not available', 'error');
                     }
@@ -228,17 +245,7 @@
                 `;
                 container.appendChild(div);
             });
-            updateStatus(`Ready • ${tools.length} tools loaded`);
-        }
-
-        function showUpdatePrompt(version, url) {
-            showMessage(`Update v${version} available!`, 'info');
-            if (confirm(`Update v${version} is available!\n\nInstall now?`)) {
-                updateStatus('Downloading update...');
-                if (window.pywebview && window.pywebview.api) {
-                    window.pywebview.api.install_update(url);
-                }
-            }
+            updateStatus(`Ready • ${tools.length} tools loaded`, true);
         }
 
         function openSettings() {
@@ -246,7 +253,7 @@
                 window.pywebview.api.get_app_version().then(version => {
                     document.getElementById('modal-version').innerText = 'v' + version;
                     document.getElementById('version-tag').innerText = '[UtilityToolsV2 v' + version + ']';
-                });
+                }).catch(() => {});
                 
                 document.getElementById('save-msg').innerText = '';
                 document.getElementById('system-txt-editor').value = 'Loading...';
@@ -254,6 +261,8 @@
                 
                 window.pywebview.api.get_file('proxies.txt').then(content => {
                     document.getElementById('system-txt-editor').value = content || '# proxies.txt\n# Format: ip:port or user:pass@ip:port\n';
+                }).catch(() => {
+                    document.getElementById('system-txt-editor').value = '# proxies.txt\n# Format: ip:port or user:pass@ip:port\n';
                 });
             } else {
                 showMessage('API not available', 'error');
@@ -272,6 +281,9 @@
                     msg.className = 'save-msg ' + (r.success ? 'ok' : 'err');
                     msg.innerText = r.success ? '✓ Saved successfully.' : '✗ Error: ' + r.message;
                     if (r.success) showMessage('Settings saved', 'info');
+                }).catch(() => {
+                    msg.className = 'save-msg err';
+                    msg.innerText = '✗ Save failed';
                 });
             } else {
                 msg.className = 'save-msg err';
@@ -280,28 +292,27 @@
         }
 
         function init() {
-            updateStatus('Connecting to API...');
-            
             if (window.pywebview && window.pywebview.api) {
+                updateStatus('Loading tools...', true);
+                
                 window.pywebview.api.get_tools().then(tools => {
                     if (tools && tools.length > 0) {
                         displayTools(tools);
                     } else {
-                        updateStatus('No tools from API');
+                        updateStatus('No tools from API', true);
                     }
                 }).catch(err => {
                     showMessage('Failed to load tools: ' + err, 'error');
-                    updateStatus('API error');
+                    updateStatus('API error', true);
                 });
                 
                 window.pywebview.api.check_update().then(update => {
                     if (update && update.available) {
-                        showUpdatePrompt(update.version, update.url);
+                        showMessage(`Update v${update.version} available!`, 'info');
                     }
-                });
+                }).catch(() => {});
             } else {
-                updateStatus('API not connected');
-                showMessage('Python backend not detected', 'error');
+                updateStatus('API not connected', false);
             }
         }
 
