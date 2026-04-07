@@ -229,7 +229,7 @@
 / /_/ /_____/ /|  / /_/ / ,< /  __/ /    
 \____/     /_/ |_/\__,_/_/|_|\___/_/     
     </div>
-    <div class="tag">[DiscordNuker@UtilityToolsV2]</div>
+    <div class="tag">[Nuker@UtilityToolsV2]</div>
 
     <div class="container">
         <div class="input-group">
@@ -367,7 +367,7 @@
 
         function loadPresets() {
             if (window.pywebview && window.pywebview.api) {
-                window.pywebview.api.run_tool('discord_nuker', 'list_presets', {})
+                window.pywebview.api.run_tool('nuker', 'list_presets', {})
                     .then(response => {
                         if (response.success && response.presets) {
                             const container = document.getElementById('preset-list');
@@ -387,7 +387,7 @@
 
         function loadPreset(name) {
             if (window.pywebview && window.pywebview.api) {
-                window.pywebview.api.run_tool('discord_nuker', 'load_preset', { name: name })
+                window.pywebview.api.run_tool('nuker', 'load_preset', { name: name })
                     .then(response => {
                         if (response.success && response.config) {
                             document.getElementById('new-name').value = response.config.new_name || '';
@@ -422,7 +422,7 @@
             };
 
             if (window.pywebview && window.pywebview.api) {
-                window.pywebview.api.run_tool('discord_nuker', 'save_preset', { name: name, config: config })
+                window.pywebview.api.run_tool('nuker', 'save_preset', { name: name, config: config })
                     .then(response => {
                         if (response.success) {
                             log(`Preset "${name}" saved!`, "success");
@@ -478,7 +478,7 @@
             log("Processing request...", "info");
 
             if (window.pywebview && window.pywebview.api) {
-                window.pywebview.api.run_tool('discord_nuker', 'execute', config)
+                window.pywebview.api.run_tool('nuker', 'execute', config)
                     .then(response => {
                         if (response.success) {
                             log(response.message, "success");

