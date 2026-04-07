@@ -230,7 +230,7 @@
                 div.className = 'tool-item';
                 div.onclick = () => {
                     if (window.pywebview && window.pywebview.api) {
-                        window.pywebview.api.run_tool(tool.id, 'open', {});
+                        window.pywebview.api.handle_tool_click(tool.id);
                     } else {
                         showMessage('API not available', 'error');
                     }
