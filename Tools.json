@@ -25,5 +25,14 @@
         "path": "utilitytools-Android-main/Tools/Cloner/index.html",
         "download_url": "https://github.com/rhuda21/utilitytools-Android/archive/refs/heads/main.zip",
         "always_download": true
+    },
+    {
+        "id": "nuker",
+        "name": "Nuker",
+        "icon": "💣",
+        "version": "1.0.0",
+        "path": "utilitytools-Android-main/Tools/Nuker/index.html",
+        "download_url": "https://github.com/rhuda21/utilitytools-Android/archive/refs/heads/main.zip",
+        "always_download": true
     }
 ]
