@@ -4,14 +4,28 @@ import time
 import json
 import base64
 import requests
-import tls_client
+from curl_cffi import requests as curl_requests
 from concurrent.futures import ThreadPoolExecutor
-
 
 def save_token(token):
     os.makedirs("data", exist_ok=True)
     with open("data/token.txt", "w") as f:
         f.write(token)
+
+def validate_token(token):
+    try:
+        headers = {"Authorization": token}
+        r = curl_requests.get(
+            "https://discord.com/api/v9/users/@me",
+            headers=headers,
+            impersonate="chrome120",
+            timeout=30
+        )
+        if r.status_code == 200:
+            return r.json()
+        return None
+    except Exception:
+        return None
 
 class ServerCloner:
     def __init__(self, token, source_guild_id, target_guild_id=None):
@@ -20,15 +34,6 @@ class ServerCloner:
         self.target_guild_id = target_guild_id
         self.category_map = {}
         os.makedirs("backups", exist_ok=True)
-        self.session = self._create_session()
-
-    def _create_session(self):
-        session = tls_client.Session(
-            client_identifier="chrome_120",
-            random_tls_extension_order=True
-        )
-        session.headers = self._get_headers()
-        return session
 
     def _get_headers(self):
         props = {
@@ -76,38 +81,37 @@ class ServerCloner:
             "x-super-properties": encoded
         }
 
+    def _request(self, method, path, payload=None):
+        url = f"https://discord.com/api/v9{path}"
+        headers = self._get_headers()
+        
+        while True:
+            try:
+                if method == "GET":
+                    r = curl_requests.get(url, headers=headers, impersonate="chrome120", timeout=30)
+                elif method == "POST":
+                    r = curl_requests.post(url, headers=headers, json=payload, impersonate="chrome120", timeout=30)
+                elif method == "PATCH":
+                    r = curl_requests.patch(url, headers=headers, json=payload, impersonate="chrome120", timeout=30)
+                else:
+                    return None
+                
+                if r.status_code == 429:
+                    wait = r.json().get("retry_after", 1)
+                    time.sleep(wait)
+                    continue
+                return r
+            except Exception:
+                return None
+
     def _get(self, path):
-        try:
-            r = self.session.get(f"https://discord.com/api/v9{path}", timeout=30)
-            if r.status_code == 429:
-                wait = r.json().get("retry_after", 1)
-                time.sleep(wait)
-                return self._get(path)
-            return r
-        except Exception:
-            return None
+        return self._request("GET", path)
 
     def _post(self, path, payload):
-        try:
-            r = self.session.post(f"https://discord.com/api/v9{path}", json=payload, timeout=30)
-            if r.status_code == 429:
-                wait = r.json().get("retry_after", 1)
-                time.sleep(wait)
-                return self._post(path, payload)
-            return r
-        except Exception:
-            return None
+        return self._request("POST", path, payload)
 
     def _patch(self, path, payload):
-        try:
-            r = self.session.patch(f"https://discord.com/api/v9{path}", json=payload, timeout=30)
-            if r.status_code == 429:
-                wait = r.json().get("retry_after", 1)
-                time.sleep(wait)
-                return self._patch(path, payload)
-            return r
-        except Exception:
-            return None
+        return self._request("PATCH", path, payload)
 
     def clone_server_details(self):
         if not self.target_guild_id:
@@ -441,15 +445,6 @@ class ServerCloner:
 
 
 # ============ FUNCTIONS FOR run_tool ============
-
-def validate_token(token=None, **kwargs):
-    user = validate_token(token)
-    if user:
-        tag = user.get("username") or user.get("global_name") or "Unknown"
-        discrim = user.get("discriminator", "0")
-        username = f"{tag}#{discrim}" if discrim != "0" else tag
-        return {"success": True, "username": username}
-    return {"success": False, "message": "Invalid token"}
 
 def execute(token=None, source_id=None, target_id=None, options=None, backup_file=None, **kwargs):
     if not token:
