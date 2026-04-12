@@ -4,7 +4,25 @@ import random
 import threading
 import time
 import re
+import json
+
 stop_spam_flag = False
+status_callback = None
+
+def set_status_callback(callback):
+    global status_callback
+    status_callback = callback
+
+def report_status(message, type_="info", progress=None):
+    global status_callback
+    if status_callback:
+        status_callback({
+            "message": message,
+            "type": type_,
+            "progress": progress,
+            "timestamp": time.time()
+        })
+
 def proxy_loader():
     try:
         with open("data/proxies.txt", "r") as f:
@@ -41,7 +59,7 @@ USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0'
 ]
 
-def send_webhook(webhook_url, content, delay=0.5,using_proxy=False, proxy_method=None):
+def send_webhook(webhook_url, content, delay=0.5, using_proxy=False, proxy_method=None):
     proxies_list = proxy_loader()
     forwarder_list = Forwarder_loader()
     proxies = None
@@ -77,78 +95,90 @@ def send_webhook(webhook_url, content, delay=0.5,using_proxy=False, proxy_method
         )
         time.sleep(delay)
         if response.status_code == 204:
-            return(f"[Webhook@UtilityToolsV2] Message sent successfully!")
+            return True, "Message sent successfully!"
         else:
-            return(f"[Webhook@UtilityToolsV2] Failed to send message. Status Code: {response.status_code}")
+            return False, f"Failed to send message. Status Code: {response.status_code}"
     except requests.exceptions.RequestException as e:
-        return(f"[Webhook@UtilityToolsV2] Error: {e}")
+        return False, f"Error: {e}"
 
-def spam_webhook(webhook_url, content, thread_count, message_count=None, delay=0.5):
-    def worker():
-        if message_count:
-            for i in range(message_count):
-                send_webhook(webhook_url, content, delay)
-        else:
-            message_counter = 0
-            while True:
-                message_counter += 1
-                send_webhook(webhook_url, content, delay)
-    
-    threads = []
-    for i in range(thread_count):
-        thread = threading.Thread(target=worker, daemon=True)
-        thread.start()
-        threads.append(thread)
-    if message_count:
-        for thread in threads:
-            thread.join()
-    else:
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            return(f"[Webhook@UtilityToolsV2] Stopping all threads...")
 def stop_spam():
     global stop_spam_flag
     stop_spam_flag = True
+    report_status("Spam stopped by user.", "warning")
     return {"success": True, "message": "Spam stopped by user."}
 
 def spam_webhook_v2(webhook_url, content, thread_count, total_messages=None, delay=0.5, proxies=False, proxy_method=None):
     global stop_spam_flag
     stop_spam_flag = False
     message_counter = 0
+    success_count = 0
+    fail_count = 0
+    lock = threading.Lock()
     
-    def worker():
-        nonlocal message_counter
+    report_status(f"Starting spam attack with {thread_count} threads...", "info", 0)
+    
+    def worker(thread_id):
+        nonlocal message_counter, success_count, fail_count
         while not stop_spam_flag:
             if total_messages and message_counter >= total_messages:
                 break
                 
-            with threading.Lock():
+            with lock:
                 if total_messages and message_counter >= total_messages:
                     break
+                current_count = message_counter + 1
                 message_counter += 1
-                        
-            send_webhook(webhook_url, content, delay, using_proxy=proxies, proxy_method=proxy_method)
+            success, msg = send_webhook(webhook_url, content, delay, using_proxy=proxies, proxy_method=proxy_method)
+            
+            with lock:
+                if success:
+                    success_count += 1
+                else:
+                    fail_count += 1
+            if current_count % 5 == 0 or not success:
+                progress = (current_count / total_messages * 100) if total_messages else None
+                status_type = "success" if success else "error"
+                report_status(
+                    f"[Thread-{thread_id}] Message {current_count}: {msg}", 
+                    status_type, 
+                    progress
+                )
     
     threads = []
     for i in range(thread_count):
-        thread = threading.Thread(target=worker, name=f"Thread-{i+1}")
+        thread = threading.Thread(target=worker, args=(i+1,), name=f"Thread-{i+1}")
         thread.start()
         threads.append(thread)
-    
     try:
         if total_messages:
             while message_counter < total_messages and not stop_spam_flag:
                 time.sleep(0.1)
             stop_spam_flag = True
         else:
+            last_reported = 0
             while not stop_spam_flag:
-                time.sleep(0.1)
+                time.sleep(1)
+                if message_counter > last_reported:
+                    report_status(
+                        f"Progress: {message_counter} sent (✓{success_count} ✗{fail_count})", 
+                        "info"
+                    )
+                    last_reported = message_counter
         
         for thread in threads:
-            thread.join(timeout=1)
+            thread.join(timeout=2)
+            
     except Exception as e:
+        report_status(f"Error: {str(e)}", "error")
         return {"success": False, "message": str(e)}
     
-    return {"success": True, "message": f"[Webhook@UtilityToolsV2] Completed! Total messages sent: {message_counter}"}
+    final_msg = f"Completed! Total: {message_counter} | Success: {success_count} | Failed: {fail_count}"
+    report_status(final_msg, "success", 100 if total_messages else None)
+    
+    return {
+        "success": True, 
+        "message": final_msg,
+        "total": message_counter,
+        "success_count": success_count,
+        "fail_count": fail_count
+    }
