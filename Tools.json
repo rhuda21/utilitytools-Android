@@ -6,7 +6,7 @@
         "version": "1.0.2",
         "path": "utilitytools-Android-main/Tools/WebhookSpammer/index.html",
         "download_url": "https://github.com/rhuda21/utilitytools-Android/archive/refs/heads/main.zip",
-        "always_download": false
+        "always_download": true
     },
     {
         "id": "webhook_deleter",

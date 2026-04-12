@@ -15,7 +15,6 @@
             --warning: #f9e2af;
             --border: #313244;
         }
-
         body {
             background-color: var(--bg);
             color: var(--text);
@@ -27,7 +26,6 @@
             margin: 0;
             min-height: 100vh;
         }
-
         .ascii-art {
             white-space: pre;
             font-size: 8px;
@@ -38,9 +36,7 @@
             margin-bottom: 5px;
             line-height: 1.2;
         }
-
         .tag { color: #7f849c; font-size: 14px; margin-bottom: 20px; }
-
         .container {
             width: 100%;
             max-width: 550px;
@@ -51,16 +47,13 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             box-sizing: border-box;
         }
-
         .divider {
             height: 1px;
             background: var(--border);
             margin: 20px 0;
         }
-
         label { display: block; margin-bottom: 10px; font-size: 14px; }
         label::before { content: "[>] "; }
-
         input, select {
             width: 100%;
             background: var(--bg);
@@ -73,17 +66,10 @@
             font-family: inherit;
             font-size: 13px;
         }
-
         input:focus, select:focus { border-color: var(--accent); }
-
-        .row {
-            display: flex;
-            gap: 15px;
-        }
+        .row { display: flex; gap: 15px; }
         .row .input-group { flex: 1; }
-
         .input-group { margin-bottom: 15px; }
-
         .proxy-box {
             background: rgba(0,0,0,0.3);
             border: 1px solid var(--border);
@@ -91,7 +77,6 @@
             padding: 15px;
             margin: 15px 0;
         }
-
         .checkbox-label {
             display: flex;
             align-items: center;
@@ -106,13 +91,11 @@
             margin: 0;
         }
         .checkbox-label span { color: var(--text); margin: 0; }
-
         .btn-group {
             display: flex;
             gap: 15px;
             margin-top: 20px;
         }
-
         .btn {
             flex: 1;
             padding: 15px;
@@ -123,7 +106,6 @@
             font-family: inherit;
             transition: 0.2s;
         }
-
         .btn-spam { 
             background: linear-gradient(90deg, #f38ba8, #f9e2af);
             color: #11111b; 
@@ -133,7 +115,6 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-        
         .btn-stop { 
             background: #313244;
             color: var(--text);
@@ -143,7 +124,6 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-
         .status-bar {
             margin-top: 15px;
             padding: 12px;
@@ -155,7 +135,6 @@
             gap: 10px;
         }
         .status-bar.active { display: flex; }
-        
         .spinner {
             width: 16px;
             height: 16px;
@@ -165,13 +144,11 @@
             animation: spin 1s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-
         .status-text {
             flex: 1;
             font-size: 13px;
             color: var(--accent);
         }
-
         .progress-bar {
             width: 100%;
             height: 6px;
@@ -182,14 +159,12 @@
             display: none;
         }
         .progress-bar.active { display: block; }
-        
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, var(--accent), var(--success));
             width: 0%;
             transition: width 0.3s ease;
         }
-
         .stats {
             display: flex;
             gap: 15px;
@@ -199,7 +174,6 @@
         }
         .stat-success { color: var(--success); }
         .stat-fail { color: var(--danger); }
-
         #console {
             margin-top: 20px;
             width: 100%;
@@ -214,7 +188,6 @@
             box-sizing: border-box;
             overflow-y: auto;
         }
-
         .log-entry {
             margin-bottom: 6px;
             padding: 4px 0;
@@ -222,18 +195,15 @@
             animation: fadeIn 0.2s ease;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
-
         .log-info { color: var(--accent); }
         .log-success { color: var(--success); }
         .log-error { color: var(--danger); }
         .log-warning { color: var(--warning); }
-
         .timestamp {
             color: #585b70;
             font-size: 11px;
             margin-right: 8px;
         }
-
         .back-btn {
             margin-top: 20px;
             color: #7f849c;
@@ -246,7 +216,6 @@
     </style>
 </head>
 <body>
-
     <div class="ascii-art">
    __  ____  _ ___ __       ______            __    _    _____      
   / / / / /_(_) (_) /___  _/_  __/___  ____  / /___| |  / /__ \     
@@ -328,44 +297,36 @@
 
     <script>
         let spamActive = false;
-        let statusCheckInterval = null;
-        let lastMessageIndex = 0;
+        let pollInterval = null;
+        let seenMessages = new Set();
 
-        function getTimestamp() {
-            const now = new Date();
-            return `[${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}]`;
-        }
-
-        function log(msg, type='info', timestamp=null) {
+        function log(text, type='info', time='') {
             const consoleBox = document.getElementById('console');
             const div = document.createElement('div');
             div.className = `log-entry log-${type}`;
-            div.innerHTML = `<span class="timestamp">${timestamp || getTimestamp()}</span>${msg}`;
+            div.innerHTML = `<span class="timestamp">[${time || '--:--:--'}]</span>${text}`;
             consoleBox.appendChild(div);
             consoleBox.scrollTop = consoleBox.scrollHeight;
-            
-            while (consoleBox.children.length > 50) {
+            while (consoleBox.children.length > 100) {
                 consoleBox.removeChild(consoleBox.firstChild);
             }
         }
 
-        function updateStatus(message, type = 'info', progress = null) {
-            const statusBar = document.getElementById('statusBar');
-            const statusText = document.getElementById('statusText');
-            const progressBar = document.getElementById('progressBar');
-            const progressFill = document.getElementById('progressFill');
+        function updateStatus(text, type='info', progress=null) {
+            const bar = document.getElementById('statusBar');
+            const txt = document.getElementById('statusText');
+            const pbar = document.getElementById('progressBar');
+            const fill = document.getElementById('progressFill');
             
-            statusBar.classList.add('active');
-            statusText.textContent = message;
-            statusText.style.color = type === 'error' ? 'var(--danger)' : 
-                                   type === 'success' ? 'var(--success)' : 
-                                   type === 'warning' ? 'var(--warning)' : 'var(--accent)';
+            bar.classList.add('active');
+            txt.textContent = text;
+            txt.style.color = type === 'error' ? 'var(--danger)' : 
+                             type === 'success' ? 'var(--success)' : 
+                             type === 'warning' ? 'var(--warning)' : 'var(--accent)';
             
             if (progress !== null) {
-                progressBar.classList.add('active');
-                progressFill.style.width = progress + '%';
-            } else {
-                progressBar.classList.remove('active');
+                pbar.classList.add('active');
+                fill.style.width = progress + '%';
             }
         }
 
@@ -376,184 +337,105 @@
             document.getElementById('statFail').textContent = stats.fail;
         }
 
-        async function pollStatus() {
-            if (!spamActive) return;
-            
+        async function fetchStatus() {
+            if (!window.pywebview || !window.pywebview.api) return;
             try {
-                if (window.pywebview && window.pywebview.api) {
-                    const status = await window.pywebview.api.run_tool('webhook_spammer', 'get_status', {});
-                    
-                    if (status && status.messages) {
-                        for (let i = lastMessageIndex; i < status.messages.length; i++) {
-                            const msg = status.messages[i];
-                            log(msg.text, msg.type, `[${msg.time}]`);
+                const data = await window.pywebview.api.run_tool('webhook_spammer', 'get_status', {});
+                if (!data) return;
+                
+                if (data.messages) {
+                    data.messages.forEach(msg => {
+                        const key = msg.time + msg.text;
+                        if (!seenMessages.has(key)) {
+                            seenMessages.add(key);
+                            log(msg.text, msg.type, msg.time);
                             updateStatus(msg.text, msg.type, msg.progress);
                         }
-                        lastMessageIndex = status.messages.length;
-                    }
-                    
-                    if (status && status.stats) {
-                        updateStats(status.stats);
-                    }
+                    });
                 }
-            } catch (e) {}
+                
+                if (data.stats) {
+                    updateStats(data.stats);
+                }
+            } catch(e) {}
         }
 
-        function startStatusPolling() {
-            lastMessageIndex = 0;
-            if (statusCheckInterval) clearInterval(statusCheckInterval);
-            statusCheckInterval = setInterval(pollStatus, 500);
+        function startPolling() {
+            seenMessages.clear();
+            fetchStatus();
+            pollInterval = setInterval(fetchStatus, 300);
         }
 
-        function stopStatusPolling() {
-            if (statusCheckInterval) {
-                clearInterval(statusCheckInterval);
-                statusCheckInterval = null;
+        function stopPolling() {
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
             }
-            pollStatus();
+            fetchStatus();
         }
 
-        const proxyToggle = document.getElementById('proxy-toggle');
-        const proxyMethodDiv = document.getElementById('proxy-method-div');
-        const spamBtn = document.getElementById('spamBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        
-        proxyToggle.addEventListener('change', (e) => {
-            proxyMethodDiv.style.display = e.target.checked ? 'block' : 'none';
+        document.getElementById('proxy-toggle').addEventListener('change', (e) => {
+            document.getElementById('proxy-method-div').style.display = e.target.checked ? 'block' : 'none';
         });
 
         async function startSpam() {
-            if (spamActive) {
-                log("Spam already running!", "warning");
-                return;
-            }
+            if (spamActive) return;
 
             const url = document.getElementById('webhook-url').value.trim();
             if (!url.startsWith("https://discord.com/api/webhooks/")) {
-                log("Invalid Discord Webhook format!", "error");
+                log("Invalid webhook URL!", "error");
                 return;
             }
 
             const threads = parseInt(document.getElementById('threads').value);
-            if (isNaN(threads) || threads < 1 || threads > 6) {
-                log("Threads must be between 1 and 6", "error");
-                return;
-            }
-
             const delay = parseFloat(document.getElementById('delay').value);
-            if (isNaN(delay) || delay < 0) {
-                log("Delay must be a positive number", "error");
-                return;
-            }
-
             const total = parseInt(document.getElementById('total-msgs').value);
-            if (isNaN(total) || total < 0) {
-                log("Total messages must be 0 or positive", "error");
-                return;
-            }
-
             const message = document.getElementById('message').value.trim();
-            if (!message) {
-                log("Message content cannot be empty", "error");
+
+            if (!confirm(`Start attack?\nTarget: ${url.substring(0,40)}...\nThreads: ${threads} | Delay: ${delay}s | Total: ${total||'∞'}`)) {
                 return;
             }
 
-            if (confirm(`Start spam attack?\nTarget: ${url.substring(0, 50)}...\nThreads: ${threads}\nDelay: ${delay}s\nTotal: ${total === 0 ? 'UNLIMITED' : total}\nProxy: ${proxyToggle.checked ? 'ON (' + document.getElementById('proxy-method').value + ')' : 'OFF'}`)) {
+            spamActive = true;
+            document.getElementById('spamBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            
+            startPolling();
+
+            try {
+                const result = await window.pywebview.api.run_tool('webhook_spammer', 'spam_webhook_v2', {
+                    webhook_url: url,
+                    content: message,
+                    thread_count: threads,
+                    total_messages: total || null,
+                    delay: delay,
+                    proxies: document.getElementById('proxy-toggle').checked,
+                    proxy_method: document.getElementById('proxy-method').value
+                });
                 
-                spamActive = true;
-                spamBtn.disabled = true;
-                stopBtn.disabled = false;
-                lastMessageIndex = 0;
-                
-                log("Initializing spam attack...", "info");
-                updateStatus("Starting threads...", "info", 0);
-                document.getElementById('statsBox').style.display = 'flex';
-                
-                startStatusPolling();
-                
-                if (window.pywebview && window.pywebview.api) {
-                    const params = {
-                        webhook_url: url,
-                        content: message,
-                        thread_count: threads,
-                        total_messages: total === 0 ? null : total,
-                        delay: delay,
-                        proxies: proxyToggle.checked,
-                        proxy_method: document.getElementById('proxy-method').value
-                    };
-                    
-                    try {
-                        const response = await window.pywebview.api.run_tool('webhook_spammer', 'spam_webhook_v2', params);
-                        
-                        spamActive = false;
-                        stopStatusPolling();
-                        
-                        if (response.success) {
-                            log(response.message, "success");
-                            updateStatus(response.message, "success", 100);
-                            if (response.total !== undefined) {
-                                updateStats({
-                                    sent: response.total,
-                                    success: response.success_count,
-                                    fail: response.fail_count
-                                });
-                            }
-                        } else {
-                            log(response.message, "error");
-                            updateStatus(response.message, "error");
-                        }
-                    } catch (err) {
-                        spamActive = false;
-                        stopStatusPolling();
-                        log("Engine Error: " + err, "error");
-                        updateStatus("Error: " + err, "error");
-                    } finally {
-                        spamBtn.disabled = false;
-                        stopBtn.disabled = true;
-                    }
+                if (result.success) {
+                    log(result.message, "success");
+                    updateStatus(result.message, "success", 100);
                 } else {
-                    log("Error: API not detected.", "error");
-                    spamActive = false;
-                    spamBtn.disabled = false;
-                    stopBtn.disabled = true;
+                    log(result.message, "error");
                 }
-            } else {
-                log("Spam cancelled.", "info");
+            } catch(err) {
+                log("Error: " + err, "error");
+            } finally {
+                spamActive = false;
+                stopPolling();
+                document.getElementById('spamBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
             }
         }
 
         async function stopSpam() {
-            if (!spamActive) {
-                log("No active spam to stop.", "info");
-                return;
-            }
-            
-            log("Stopping spam...", "warning");
-            updateStatus("Stopping...", "warning");
-            
-            if (window.pywebview && window.pywebview.api) {
-                try {
-                    const response = await window.pywebview.api.run_tool('webhook_spammer', 'stop_spam', {});
-                    spamActive = false;
-                    stopStatusPolling();
-                    
-                    spamBtn.disabled = false;
-                    stopBtn.disabled = true;
-                    
-                    if (response.success) {
-                        log(response.message, "success");
-                        updateStatus(response.message, "success");
-                    }
-                } catch (err) {
-                    spamActive = false;
-                    stopStatusPolling();
-                    spamBtn.disabled = false;
-                    stopBtn.disabled = true;
-                    log("Stop Error: " + err, "error");
-                    updateStatus("Stop failed: " + err, "error");
-                }
-            } else {
-                log("Error: API not detected.", "error");
+            if (!spamActive) return;
+            try {
+                await window.pywebview.api.run_tool('webhook_spammer', 'stop_spam', {});
+                log("Stopping...", "warning");
+            } catch(e) {
+                log("Stop failed", "error");
             }
         }
 
