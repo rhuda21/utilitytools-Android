@@ -7,21 +7,40 @@ import re
 import json
 
 stop_spam_flag = False
-status_callback = None
+_status_data = {"messages": [], "stats": {"sent": 0, "success": 0, "fail": 0}, "running": False}
+_status_lock = threading.Lock()
 
-def set_status_callback(callback):
-    global status_callback
-    status_callback = callback
+def get_status():
+    global _status_data
+    with _status_lock:
+        data = _status_data.copy()
+        data["messages"] = _status_data["messages"][-20:]
+    return data
 
-def report_status(message, type_="info", progress=None):
-    global status_callback
-    if status_callback:
-        status_callback({
-            "message": message,
+def clear_status():
+    global _status_data
+    with _status_lock:
+        _status_data = {"messages": [], "stats": {"sent": 0, "success": 0, "fail": 0}, "running": True}
+
+def _log(msg, type_="info", progress=None):
+    global _status_data
+    with _status_lock:
+        _status_data["messages"].append({
+            "text": msg,
             "type": type_,
             "progress": progress,
-            "timestamp": time.time()
+            "time": time.strftime("%H:%M:%S")
         })
+
+def _update_stats(sent=None, success=None, fail=None):
+    global _status_data
+    with _status_lock:
+        if sent is not None:
+            _status_data["stats"]["sent"] = sent
+        if success is not None:
+            _status_data["stats"]["success"] = success
+        if fail is not None:
+            _status_data["stats"]["fail"] = fail
 
 def proxy_loader():
     try:
@@ -104,7 +123,7 @@ def send_webhook(webhook_url, content, delay=0.5, using_proxy=False, proxy_metho
 def stop_spam():
     global stop_spam_flag
     stop_spam_flag = True
-    report_status("Spam stopped by user.", "warning")
+    _log("Spam stopped by user.", "warning")
     return {"success": True, "message": "Spam stopped by user."}
 
 def spam_webhook_v2(webhook_url, content, thread_count, total_messages=None, delay=0.5, proxies=False, proxy_method=None):
@@ -115,7 +134,9 @@ def spam_webhook_v2(webhook_url, content, thread_count, total_messages=None, del
     fail_count = 0
     lock = threading.Lock()
     
-    report_status(f"Starting spam attack with {thread_count} threads...", "info", 0)
+    clear_status()
+    _log(f"Starting spam attack with {thread_count} threads...", "info", 0)
+    _update_stats(0, 0, 0)
     
     def worker(thread_id):
         nonlocal message_counter, success_count, fail_count
@@ -128,6 +149,7 @@ def spam_webhook_v2(webhook_url, content, thread_count, total_messages=None, del
                     break
                 current_count = message_counter + 1
                 message_counter += 1
+            
             success, msg = send_webhook(webhook_url, content, delay, using_proxy=proxies, proxy_method=proxy_method)
             
             with lock:
@@ -135,20 +157,19 @@ def spam_webhook_v2(webhook_url, content, thread_count, total_messages=None, del
                     success_count += 1
                 else:
                     fail_count += 1
+                _update_stats(message_counter, success_count, fail_count)
+            
             if current_count % 5 == 0 or not success:
                 progress = (current_count / total_messages * 100) if total_messages else None
                 status_type = "success" if success else "error"
-                report_status(
-                    f"[Thread-{thread_id}] Message {current_count}: {msg}", 
-                    status_type, 
-                    progress
-                )
+                _log(f"[Thread-{thread_id}] Message {current_count}: {msg}", status_type, progress)
     
     threads = []
     for i in range(thread_count):
         thread = threading.Thread(target=worker, args=(i+1,), name=f"Thread-{i+1}")
         thread.start()
         threads.append(thread)
+    
     try:
         if total_messages:
             while message_counter < total_messages and not stop_spam_flag:
@@ -159,21 +180,18 @@ def spam_webhook_v2(webhook_url, content, thread_count, total_messages=None, del
             while not stop_spam_flag:
                 time.sleep(1)
                 if message_counter > last_reported:
-                    report_status(
-                        f"Progress: {message_counter} sent (✓{success_count} ✗{fail_count})", 
-                        "info"
-                    )
+                    _log(f"Progress: {message_counter} sent (✓{success_count} ✗{fail_count})", "info")
                     last_reported = message_counter
         
         for thread in threads:
             thread.join(timeout=2)
             
     except Exception as e:
-        report_status(f"Error: {str(e)}", "error")
+        _log(f"Error: {str(e)}", "error")
         return {"success": False, "message": str(e)}
     
     final_msg = f"Completed! Total: {message_counter} | Success: {success_count} | Failed: {fail_count}"
-    report_status(final_msg, "success", 100 if total_messages else None)
+    _log(final_msg, "success", 100 if total_messages else None)
     
     return {
         "success": True, 
